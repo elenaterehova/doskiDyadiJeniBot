@@ -1,5 +1,6 @@
 test-sheets-418005-441dc454af2d.json
 __pycache__/
+**/__pycache__/
 # Environments
 .env
 .venv
