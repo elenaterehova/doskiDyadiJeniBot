@@ -9,6 +9,56 @@ from bot.core.Models import *
 admins_router = Router()
 
 
+# Кнопка 'Записаться на мероприятие'
+@admins_router.callback_query(F.data.contains('subscribe_for_the_event'))
+async def subscribe_for_the_event(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
+    try:
+        event_list = repo.get_events()
+        await bot.send_message(chat_id=callback_query.from_user.id, text='Список мероприятий: ')
+        for event in event_list:
+            await bot.send_message(chat_id=callback_query.from_user.id,
+                                   text=f"{event.title}\n\n"
+                                        f"{event.description}\n\n"
+                                        f"{event.date}",
+                                   reply_markup=InlineKeyboardMarkup(
+                                       inline_keyboard=[[InlineKeyboardButton(text='Записаться сюда',
+                                                                              callback_data=f"event_id:{event.id}")],
+                                                        [InlineKeyboardButton(text='Редактировать мероприятие',
+                                                                              callback_data=f"edit_event:{event.id}")]
+                                                        ],
+                                       resize_keyboard=True,
+                                       one_time_keyboard=True))
+    except Exception as e:
+        await bot.send_message(chat_id=callback_query.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
+        print(str(e))
+
+
+# Кнопка 'Редактировать мероприятие'
+@admins_router.callback_query(F.data.contains("edit_event"))
+async def edit_event(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
+    event_id_from_callback = int(callback_query.data.split(":")[1])
+    print(event_id_from_callback)
+    event_list = repo.get_events()
+    for event in event_list:
+        if event_id_from_callback == event.id:
+            await bot.send_message(chat_id=callback_query.from_user.id, text='Изменение мероприятия:')
+            await bot.send_message(chat_id=callback_query.from_user.id,
+                                   text=f"{event.title}\n\n"
+                                        f"{event.description}\n\n"
+                                        f"{event.date}",
+                                   reply_markup=InlineKeyboardMarkup(
+                                       inline_keyboard=[[InlineKeyboardButton(text='Изменить заголовок',
+                                                                              callback_data=f"edit_title: {event.id}")],
+                                                        [InlineKeyboardButton(text='Изменить описание',
+                                                                              callback_data=f"edit_description: {event.id}")],
+                                                        [InlineKeyboardButton(text='Изменить дату',
+                                                                              callback_data=f"edit_date: {event.id}")]
+                                                        ],
+                                       resize_keyboard=True,
+                                       one_time_keyboard=True))
+        else:
+            await bot.send_message(chat_id=callback_query.from_user.id, text='Мероприятие не найдено.')
+
 @admins_router.callback_query(F.data.contains('show_admins'))
 async def show_admins(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     try:
@@ -44,7 +94,7 @@ async def remove_admin(callback_query: types.CallbackQuery, bot: Bot, state: FSM
                                         text='Администратор удален.', reply_markup=admins_start_keyboard())
         else:
             await bot.send_message(chat_id=callback_query.from_user.id,
-                                    text=f"Ошибка удаления администратора: {response['message']}")
+                                   text=f"Ошибка удаления администратора: {response['message']}")
 
     except Exception as e:
         await bot.send_message(chat_id=callback_query.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
@@ -74,7 +124,38 @@ async def add_admin(message: Message, bot: Bot, state: FSMContext):
     response = repo.add_admin(AdminModel(id=id, nickname=name))
 
     if response['added']:
-        await bot.send_message(chat_id=message.from_user.id, text='Администратор успешно добавлен!', reply_markup=admins_start_keyboard())
+        await bot.send_message(chat_id=message.from_user.id, text='Администратор успешно добавлен!',
+                               reply_markup=admins_start_keyboard())
+    else:
+        await bot.send_message(chat_id=message.from_user.id,
+                               text=f"Ошибка добавления администратора: {response['message']}")
+
+
+@admins_router.callback_query(F.data.contains('add_event'))
+async def add_admin_id(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
+    await state.set_state(states.set_event_title)
+    await bot.send_message(callback_query.from_user.id, text='Введите название мероприятия:')
+
+
+@admins_router.message(states.set_id)
+async def add_admin_name(message: Message, bot: Bot, state: FSMContext):
+    id = message.text
+    # Проверка на корректность
+    await state.set_state(states.set_name)
+    await state.set_data({'id': id})
+    await bot.send_message(chat_id=message.from_user.id, text='Введите имя пользователя')
+
+
+@admins_router.message(states.set_name)
+async def add_admin(message: Message, bot: Bot, state: FSMContext):
+    id = await state.get_data()
+    id = id['id']
+    name = message.text
+    response = repo.add_admin(AdminModel(id=id, nickname=name))
+
+    if response['added']:
+        await bot.send_message(chat_id=message.from_user.id, text='Администратор успешно добавлен!',
+                               reply_markup=admins_start_keyboard())
     else:
         await bot.send_message(chat_id=message.from_user.id,
                                text=f"Ошибка добавления администратора: {response['message']}")

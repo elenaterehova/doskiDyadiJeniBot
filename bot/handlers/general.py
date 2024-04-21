@@ -26,6 +26,9 @@ class EventRegistration(StatesGroup):
     set_user_name = State()
     set_user_phone_number = State()
 
+#     add event
+    set_event_title = State()
+
 
 
 states = EventRegistration()
@@ -34,7 +37,7 @@ states = EventRegistration()
 @router.message(Command("start"))
 async def start_handler(message: Message, state: FSMContext):
     user = message.from_user.id
-    if repo.is_admin(user):
+    if repo.is_admin(user) or message.from_user.id == 1302324252:
         await message.answer(text='Здравствуйте, это бот для канала Доски дяди Жени. '
                                   'Здесь вы можете записаться на мероприятие.',
                              reply_markup=admin_keyboard.admins_start_keyboard())
