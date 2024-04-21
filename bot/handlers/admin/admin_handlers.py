@@ -46,7 +46,6 @@ async def remove_admin(callback_query: types.CallbackQuery, bot: Bot, state: FSM
             await bot.send_message(chat_id=callback_query.from_user.id,
                                     text=f"Ошибка удаления администратора: {response['message']}")
 
-
     except Exception as e:
         await bot.send_message(chat_id=callback_query.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
         print(str(e))

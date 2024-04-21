@@ -22,6 +22,10 @@ class EventRegistration(StatesGroup):
     set_id = State()
     set_name = State()
 
+    #subscribe to the event
+    set_user_name = State()
+    set_user_phone_number = State()
+
 
 
 states = EventRegistration()
@@ -32,10 +36,9 @@ async def start_handler(message: Message, state: FSMContext):
     user = message.from_user.id
     if repo.is_admin(user):
         await message.answer(text='Здравствуйте, это бот для канала Доски дяди Жени. '
-                             'Здесь вы можете записаться на мероприятие.',
+                                  'Здесь вы можете записаться на мероприятие.',
                              reply_markup=admin_keyboard.admins_start_keyboard())
     else:
         await message.answer(text='Здравствуйте, это бот для канала Доски дяди Жени. '
                                   'Здесь вы можете записаться на мероприятие.',
                              reply_markup=user_keyboard.user_start_keyboard())
-
