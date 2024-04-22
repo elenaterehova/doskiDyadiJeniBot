@@ -99,7 +99,15 @@ class GoogleRepository:
     # ----- EVENTS -------
     def get_events(self) -> [EventModel]:
         # Возвращает список всех мероприятий
-        return EventModel.mock()
+        # return EventModel.mock()
+
+        events = self.apiWorker.get(sheetName=self.events_sheet_name, rows=-1, columns=2, start_row=2, start_column=1)
+        res = []
+        for i in range(0, len(events)):
+            if len(events[i]) < 2:
+                continue
+            res.append(AdminModel.parse(object=objects[i]))
+        return res
 
     def get_subscribed_users(self, event_id: Union[int, str]) -> [UserModel]:
         # Возвращает список пользователей, записавшихся на определённое мероприятие

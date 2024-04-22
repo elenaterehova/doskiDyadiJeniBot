@@ -141,7 +141,6 @@ async def add_admin_name(message: Message, bot: Bot, state: FSMContext):
     await bot.send_message(chat_id=message.from_user.id, text='Введите имя пользователя')
 
 
-# -----------------------------------------------------------------------------------------
 @admins_router.message(states.set_name)
 async def add_admin(message: Message, bot: Bot, state: FSMContext):
     id = await state.get_data()
@@ -181,6 +180,7 @@ async def add_admin(message: Message, bot: Bot, state: FSMContext):
                                text=f"Ошибка добавления администратора: {response['message']}")
 
 
+# ------------------------------------ДОБАВИТЬ МЕРОПРИЯТИЕ-----------------------------------------------------
 @admins_router.callback_query(F.data.contains('add_event'))
 async def add_event_title(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     await state.set_state(states.set_event_title)

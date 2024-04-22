@@ -34,5 +34,8 @@ class EventModel:
         self.date = date
 
     @classmethod
+    def parse(cls, object: list):
+        return EventModel(id=object[0], title=object[1], description=object[2],  )
+    @classmethod
     def mock(cls):
         return [EventModel('Event 123', 'Some description', '28/10/2024T10:00') for _ in range(0, 10)]
