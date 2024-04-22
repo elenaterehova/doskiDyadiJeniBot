@@ -26,7 +26,7 @@ class UserModel:
         return [UserModel(123, 'Терентьев Михал Палыч', '88005553535', 'NightBurgerus') for _ in range(0, 10)]
 
 class EventModel:
-    id_iter = itertools.count(1)
+    id_iter = itertools.count(15)
     def __init__(self, title, description, date):
         self.id = next(EventModel.id_iter)
         self.title = title

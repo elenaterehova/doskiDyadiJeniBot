@@ -106,7 +106,7 @@ class GoogleRepository:
         for i in range(0, len(events)):
             if len(events[i]) < 2:
                 continue
-            res.append(AdminModel.parse(object=objects[i]))
+            res.append(AdminModel.parse(object=events[i]))
         return res
 
     def get_subscribed_users(self, event_id: Union[int, str]) -> [UserModel]:
@@ -126,6 +126,8 @@ class GoogleRepository:
         #   "message": "<Сообщение ошибки>"
         # }
         # Проверка на наличие мероприятия
+
+
         events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=1, start_row=2, start_column=1)
         if len(events) > 0:
             for event in events:
@@ -134,7 +136,6 @@ class GoogleRepository:
                         "added": False,
                         "message": "Мероприятие с таким id уже существует."
                     }
-
         # Добавление мероприятия
         self.apiWorker.post(sheetName=self.events_sheet_name, data=[[info.id, info.title, info.description, info.date]])
         events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=1, start_row=2, start_column=1)
@@ -145,6 +146,9 @@ class GoogleRepository:
             }
 
         print(events)
+
+        self.apiWorker.post(sheetName=info.title, data=[['1', '2', '3', '4']])
+
         events = list(filter(lambda x: x[0] == str(info.id), events))
         if len(events) > 0:
             return {"added": True}
@@ -153,8 +157,6 @@ class GoogleRepository:
             "added": False,
             "message": "Ошибка добавления мероприятия"
         }
-
-        # return {"added": True}
 
     def remove_event(self, id: Union[int, str]) -> dict:
         # Удаляет мероприятие

@@ -38,12 +38,14 @@ states = EventRegistration()
 
 @router.message(Command("start"))
 async def start_handler(message: Message, state: FSMContext):
-    user = message.from_user.id
-    if repo.is_admin(user) or message.from_user.id == 1302324252:
-        await message.answer(text='Здравствуйте, это бот для канала Доски дяди Жени. '
-                                  'Здесь вы можете записаться на мероприятие.',
-                             reply_markup=admin_keyboard.admins_start_keyboard())
-    else:
-        await message.answer(text='Здравствуйте, это бот для канала Доски дяди Жени. '
-                                  'Здесь вы можете записаться на мероприятие.',
-                             reply_markup=user_keyboard.user_start_keyboard())
+    repo.apiWorker.delete_sheet(sheet=1)
+    # repo.apiWorker.add_sheet(1, '123', ['123', '123', '123'])
+    # user = message.from_user.id
+    # if repo.is_admin(user):
+    #     await message.answer(text='Здравствуйте, это бот для канала Доски дяди Жени. '
+    #                               'Здесь вы можете записаться на мероприятие.',
+    #                          reply_markup=admin_keyboard.admins_start_keyboard())
+    # else:
+    #     await message.answer(text='Здравствуйте, это бот для канала Доски дяди Жени. '
+    #                               'Здесь вы можете записаться на мероприятие.',
+    #                          reply_markup=user_keyboard.user_start_keyboard())
