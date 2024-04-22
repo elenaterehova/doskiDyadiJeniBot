@@ -101,12 +101,12 @@ class GoogleRepository:
         # Возвращает список всех мероприятий
         # return EventModel.mock()
 
-        events = self.apiWorker.get(sheetName=self.events_sheet_name, rows=-1, columns=2, start_row=2, start_column=1)
+        events = self.apiWorker.get(sheetName=self.events_sheet_name, rows=-1, columns=4, start_row=2, start_column=1)
         res = []
         for i in range(0, len(events)):
             if len(events[i]) < 2:
                 continue
-            res.append(AdminModel.parse(object=events[i]))
+            res.append(EventModel.parse(object=events[i]))
         return res
 
     def get_subscribed_users(self, event_id: Union[int, str]) -> [UserModel]:
@@ -117,7 +117,8 @@ class GoogleRepository:
         # Добавляет мероприятие
         # При успешном добавлении возвращает объект:
         # {
-        #   "added": True
+        #   "added": True,
+        #   "link": t.me/...?register=id_<...>
         # }
         #
         # При неудачном добавлении:
@@ -127,31 +128,45 @@ class GoogleRepository:
         # }
         # Проверка на наличие мероприятия
 
-
-        events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=1, start_row=2, start_column=1)
+        # Получение всех мероприятий и поиск на такое же название
+        events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=3, start_row=2, start_column=2)
         if len(events) > 0:
             for event in events:
-                if len(event) > 0 and event[0] == str(info.id):
+                if len(event) > 1 and str(event[0]).lower() == str(info.title).lower() and event[2] == info.date:
                     return {
                         "added": False,
-                        "message": "Мероприятие с таким id уже существует."
+                        "message": "мероприятие с таким названием и в это время уже существует."
                     }
-        # Добавление мероприятия
-        self.apiWorker.post(sheetName=self.events_sheet_name, data=[[info.id, info.title, info.description, info.date]])
+
+        old_events_count = len(events)
+
+        new_event_id = 1
+        if len(events) > 0 and len(events[-1]) > 0 and len(str(events[-1][0])) > 0:
+            new_event_id = int(events[-1][0]) + 1
+
+        # Добавление мероприятия в лист "Мероприятия
+        self.apiWorker.post(sheetName=self.events_sheet_name, data=[[new_event_id, info.title, info.description, info.date]])
+
+        # Создание нового листа с именем мероприятия
+        self.apiWorker.add_sheet(sheet_id=new_event_id, sheet_name=f"{info.title} {info.date}", header=['ID пользователя', 'ФИО', 'Телефон', 'Телеграм'])
+
+
+        # Проверка на добавление мероприятия в общий список
         events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=1, start_row=2, start_column=1)
-        if len(events) == 0:
+        if len(events) == 0 or len(events) - old_events_count < 1:
             return {
                 "added": False,
                 "message": "Ошибка добавления мероприятия"
             }
 
-        print(events)
+        # self.apiWorker.post(sheetName=info.title, data=[['1', '2', '3', '4']])
 
-        self.apiWorker.post(sheetName=info.title, data=[['1', '2', '3', '4']])
-
-        events = list(filter(lambda x: x[0] == str(info.id), events))
+        events = list(filter(lambda x: x[0] == str(new_event_id), events))
         if len(events) > 0:
-            return {"added": True}
+            return {
+                "added": True,
+                "link": f"t.me/https://t.me/dyadyaJenaTest_bot?register=id_{new_event_id}"
+            }
 
         return {
             "added": False,
@@ -171,6 +186,7 @@ class GoogleRepository:
         #   "message": "<Сообщение ошибки>"
         # }
         # TODO: не забыть удалить таблицу при удалении
+        self.apiWorker.delete_sheet(sheet=id)
         return {"removed": True}
 
     def edit_event(self, id: Union[int, str], info: dict) -> dict:
@@ -220,6 +236,8 @@ class GoogleRepository:
         #   "subscribed": False,
         #   "message": "<Сообщение ошибки>"
         # }
+        self.apiWorker.getSheets()
+        
         return {"subscribed": True}
 
     def unsubscribe_from_event(self, event_id: Union[int, str], user: UserModel) -> dict:

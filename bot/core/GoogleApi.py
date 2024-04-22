@@ -76,8 +76,9 @@ class GoogleSheetsAPI:
             range=range,
             majorDimension="ROWS"
         ).execute()
-        print(res)
-        return res['values']
+        if 'values' in res:
+            return res['values']
+        return []
 
     # При start_row == -1 и start_column == -1, то добавление происходит в конец таблицы
     def post(self, sheetName, data, start_column=-1, start_row=-1):

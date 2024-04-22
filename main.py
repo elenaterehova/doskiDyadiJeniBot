@@ -10,7 +10,7 @@ from bot.handlers.admin.admin_handlers import *
 from bot.handlers.user.user_handlers import *
 # from bot.handlers import *
 from dotenv import load_dotenv
-
+from bot.handlers.admin.admin_event_handlers import *
 
 load_dotenv()
 
@@ -21,7 +21,7 @@ dp = Dispatcher()
 async def main():
     bot = Bot(os.getenv('BOT_TOKEN'), parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=MemoryStorage())
-    dp.include_routers(router, admins_router, user_router)
+    dp.include_routers(router, admins_router, user_router, admin_events_router)
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
     dp.message.middleware(ChatActionMiddleware())

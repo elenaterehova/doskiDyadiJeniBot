@@ -26,16 +26,15 @@ class UserModel:
         return [UserModel(123, 'Терентьев Михал Палыч', '88005553535', 'NightBurgerus') for _ in range(0, 10)]
 
 class EventModel:
-    id_iter = itertools.count(15)
-    def __init__(self, title, description, date):
-        self.id = next(EventModel.id_iter)
+    def __init__(self, id, title, description, date):
+        self.id = id
         self.title = title
         self.description = description
         self.date = date
 
     @classmethod
     def parse(cls, object: list):
-        return EventModel(id=object[0], title=object[1], description=object[2],  )
+        return EventModel(id=object[0], title=object[1], description=object[2], date=object[3])
     @classmethod
     def mock(cls):
         return [EventModel('Event 123', 'Some description', '28/10/2024T10:00') for _ in range(0, 10)]
