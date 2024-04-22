@@ -119,7 +119,7 @@ async def event_date_added(message: Message, bot: Bot, state: FSMContext):
     data = await state.get_data()
     title = data['title']
     description = data['description']
-    response = repo.add_event(EventModel(title=title, description=description, date=event_date))
+    response = repo.add_event(EventModel(id=0, title=title, description=description, date=event_date))
 
     if response['added']:
         _message = "Мероприятие успешно добавлено!"

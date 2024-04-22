@@ -236,8 +236,16 @@ class GoogleRepository:
         #   "subscribed": False,
         #   "message": "<Сообщение ошибки>"
         # }
-        self.apiWorker.getSheets()
-        
+
+        events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=3)
+        sheet_name = -1
+        for e in events:
+            print(e)
+            if str(e[0]) == str(event_id):
+                sheet_name = f"'{e[1]} {e[3]}'"
+
+        data = [[user.user_id, user.name, user.phone_number, user.telegram_link]]
+        res = self.apiWorker.post(sheetName=sheet_name, data=data)
         return {"subscribed": True}
 
     def unsubscribe_from_event(self, event_id: Union[int, str], user: UserModel) -> dict:

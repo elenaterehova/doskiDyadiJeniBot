@@ -64,10 +64,10 @@ class GoogleSheetsAPI:
         sheetId = list(filter(lambda x: x['properties']['title'] == sheetName, self.sheets))
         sheetId = 0 if len(sheetId) == 0 else int(sheetId[0]['properties']['sheetId'])
 
-        s_column = self.__get_column(start_column)
+        s_column = self.__get_column(max(start_column, 1))
         s_row = start_row
-        e_column = self.__get_column(start_column + columns)
-        e_row = start_row + rows
+        e_column = self.__get_column(max(start_column, 1) + columns)
+        e_row = start_row + max(rows, 0)
         sheet_name = f"{sheetName}{'!' if len(sheetName) > 0 else ''}"
         range = f"{sheet_name}{s_column}{s_row}:{e_column}{e_row if rows != -1 else ''}"
 
