@@ -28,7 +28,9 @@ class EventRegistration(StatesGroup):
 
 #     add event
     set_event_title = State()
-
+    set_new_event_title = State()
+    set_event_description = State()
+    set_event_date = State()
 
 
 states = EventRegistration()

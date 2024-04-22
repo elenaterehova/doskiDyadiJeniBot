@@ -6,6 +6,7 @@ class GoogleRepository:
     def __init__(self, apiWorker: GoogleSheetsAPI):
         self.apiWorker = apiWorker
         self.admins_sheet_name: Final[str] = 'Администраторы'
+        self.events_sheet_name: Final[str] = 'Мероприятия'
 
     # ---- ADMINS --------
     def get_admins(self) -> [AdminModel]:
@@ -116,7 +117,36 @@ class GoogleRepository:
         #   "added": False,
         #   "message": "<Сообщение ошибки>"
         # }
-        return {"added": True}
+        # Проверка на наличие мероприятия
+        events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=1, start_row=2, start_column=1)
+        if len(events) > 0:
+            for event in events:
+                if len(event) > 0 and event[0] == str(info.id):
+                    return {
+                        "added": False,
+                        "message": "Мероприятие с таким id уже существует."
+                    }
+
+        # Добавление мероприятия
+        self.apiWorker.post(sheetName=self.events_sheet_name, data=[[info.id, info.title, info.description, info.date]])
+        events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=1, start_row=2, start_column=1)
+        if len(events) == 0:
+            return {
+                "added": False,
+                "message": "Ошибка добавления мероприятия"
+            }
+
+        print(events)
+        events = list(filter(lambda x: x[0] == str(info.id), events))
+        if len(events) > 0:
+            return {"added": True}
+
+        return {
+            "added": False,
+            "message": "Ошибка добавления мероприятия"
+        }
+
+        # return {"added": True}
 
     def remove_event(self, id: Union[int, str]) -> dict:
         # Удаляет мероприятие
@@ -145,6 +175,26 @@ class GoogleRepository:
         #   "changed": False,
         #   "message": "<Сообщение ошибки>"
         # }
+
+        # Добавление админа
+        # self.apiWorker.post(sheetName=self.admins_sheet_name, data=[[admin.id, admin.nickname]])
+        # admins = self.apiWorker.get(sheetName=self.admins_sheet_name, columns=1, start_row=2, start_column=1)
+        # if len(admins) == 0:
+        #     return {
+        #         "added": False,
+        #         "message": "Ошибка добавления администратора"
+        #     }
+        #
+        # print(admins)
+        # admins = list(filter(lambda x: x[0] == str(admin.id), admins))
+        # if len(admins) > 0:
+        #     return {"added": True}
+        #
+        # return {
+        #     "added": False,
+        #     "message": "Ошибка добавления администратора"
+        # }
+        #
         return {"changed": True}
 
     # ------ USER INTERACTIVE ------

@@ -1,3 +1,6 @@
+import itertools
+
+
 class AdminModel:
     def __init__(self, id, nickname):
         self.id = id
@@ -23,12 +26,13 @@ class UserModel:
         return [UserModel(123, 'Терентьев Михал Палыч', '88005553535', 'NightBurgerus') for _ in range(0, 10)]
 
 class EventModel:
-    def __init__(self, id, title, description, date):
-        self.id = id
+    id_iter = itertools.count()
+    def __init__(self, title, description, date):
+        self.id = next(EventModel.id_iter)
         self.title = title
         self.description = description
         self.date = date
 
     @classmethod
     def mock(cls):
-        return [EventModel(123, 'Event 123', 'Some description', '28/10/2024T10:00') for _ in range(0, 10)]
+        return [EventModel('Event 123', 'Some description', '28/10/2024T10:00') for _ in range(0, 10)]
