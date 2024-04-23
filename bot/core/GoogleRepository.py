@@ -8,6 +8,26 @@ class GoogleRepository:
         self.admins_sheet_name: Final[str] = 'Администраторы'
         self.events_sheet_name: Final[str] = 'Мероприятия'
 
+
+    # ----------- HELPERS -------------
+    def get_sheetname_by_id(self, id) -> str:
+        if self.apiWorker.needs_update_sheets:
+            self.apiWorker.getSheets()
+
+        for sheet in self.apiWorker.sheets:
+            if str(sheet['properties']['sheetId']) == str(id):
+                return sheet['properties']['title']
+        return ''
+
+    def get_sheet_id_by_name(self, name: str) -> int:
+        if self.apiWorker.needs_update_sheets:
+            self.apiWorker.getSheets()
+
+        for sheet in self.apiWorker.sheets:
+            if str(sheet['properties']['title']) == str(name):
+                return int(sheet['properties']['sheetId'])
+        return -1
+
     # ---- ADMINS --------
     def get_admins(self) -> [AdminModel]:
         # Возвращает список администраторов
@@ -129,10 +149,10 @@ class GoogleRepository:
         # Проверка на наличие мероприятия
 
         # Получение всех мероприятий и поиск на такое же название
-        events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=3, start_row=2, start_column=2)
+        events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=4, start_row=2, start_column=1)
         if len(events) > 0:
             for event in events:
-                if len(event) > 1 and str(event[0]).lower() == str(info.title).lower() and event[2] == info.date:
+                if len(event) > 1 and str(event[1]).lower() == str(info.title).lower() and event[3] == info.date:
                     return {
                         "added": False,
                         "message": "мероприятие с таким названием и в это время уже существует."
@@ -187,6 +207,31 @@ class GoogleRepository:
         # }
         # TODO: не забыть удалить таблицу при удалении
         self.apiWorker.delete_sheet(sheet=id)
+        events = self.apiWorker.get(sheetName=self.events_sheet_name)
+        clear_index = -1
+        print(events)
+        for i in range(0, len(events)):
+            if len(events[i]) > 1 and str(events[i][0]) == str(id):
+                clear_index = i
+                break
+        if clear_index == -1:
+            return {
+                "removed": False,
+                "message": 'мероприятие не найдено в списке всех мероприятий'
+            }
+
+        res = self.apiWorker.clear_cells(sheetName=self.events_sheet_name,
+                                         rows=1,
+                                         columns=4,
+                                         start_row=clear_index + 1,
+                                         start_column=1)
+        self.apiWorker.getSheets()
+        sheet_id = -1
+        for s in self.apiWorker.sheets:
+            if str(s['properties']['title']).lower() == self.events_sheet_name.lower():
+                sheet_id = int(s['properties']['sheetId'])
+                break
+        self.apiWorker.cutPasteRow(sheet_id=sheet_id, source_row_index=clear_index + 1, destination_row_index=clear_index)
         return {"removed": True}
 
     def edit_event(self, id: Union[int, str], info: dict) -> dict:

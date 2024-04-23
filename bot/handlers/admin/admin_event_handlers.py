@@ -137,5 +137,6 @@ async def event_date_added(message: Message, bot: Bot, state: FSMContext):
 async def edit_title(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     event_id_from_callback = int(callback_query.data.split(":")[1])
     await bot.send_message(chat_id=callback_query.from_user.id, text='Удаление мероприятия...')
+    print("id: ", event_id_from_callback)
     repo.remove_event(id=event_id_from_callback)
     await bot.send_message(chat_id=callback_query.from_user.id, text='Мероприятие удалено')

@@ -15,6 +15,7 @@ class GoogleSheetsAPI:
         self.service = None
         self.sheets = None
         self.__configure()
+        self.needs_update_sheets = True
 
     def __configure(self):
         credentials = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE,
@@ -54,8 +55,7 @@ class GoogleSheetsAPI:
     def getSheets(self):
         spreadsheet = self.service.spreadsheets().get(spreadsheetId=self.spreadsheetId).execute()
         self.sheets = spreadsheet.get('sheets')
-        for sheet in self.sheets:
-            print(sheet['properties']['sheetId'], sheet['properties']['title'])
+        self.needs_update_sheets = False
 
     def get(self, sheetName='', rows=-1, columns=1, start_row=1, start_column=-1):
         if self.sheets == None:
@@ -82,6 +82,7 @@ class GoogleSheetsAPI:
 
     # При start_row == -1 и start_column == -1, то добавление происходит в конец таблицы
     def post(self, sheetName, data, start_column=-1, start_row=-1):
+        self.needs_update_sheets = True
         if start_row == -1 and start_column == -1:
             res = self.service.spreadsheets().values().append(
                 spreadsheetId=self.spreadsheetId,
@@ -120,12 +121,14 @@ class GoogleSheetsAPI:
         return summ == updates
 
     def clear_cells(self, sheetName, rows: int, columns: int, start_row: int, start_column):
+        self.needs_update_sheets = True
         data = []
         for i in range(0, rows):
             data.append(['' for _ in range(0, columns)])
         return self.post(sheetName=sheetName, data=data, start_column=start_column, start_row=start_row)
 
     def add_sheet(self, sheet_id, sheet_name: str, header: list = []):
+        self.needs_update_sheets = True
         body = {
             "requests": [
                 {
@@ -190,7 +193,7 @@ class GoogleSheetsAPI:
         self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheetId, body=body).execute()
 
     def delete_sheet(self, sheet: Union[int, str]):
-
+        self.needs_update_sheets = True
         if type(sheet) is not int:
             self.getSheets()
             id = 0
@@ -211,6 +214,27 @@ class GoogleSheetsAPI:
         }
         self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheetId, body=body).execute()
 
+    def cutPasteRow(self, sheet_id: int, source_row_index: int, destination_row_index: int):
+        self.needs_update_sheets = True
+        body = {
+            "requests": [
+                {
+                    "cutPaste": {
+                        "source": {
+                            "sheetId": sheet_id,
+                            "startRowIndex": source_row_index,
+                            "startColumnIndex": 0
+                        },
+                        "destination": {
+                            "sheetId": sheet_id,
+                            "rowIndex": destination_row_index
+                        },
+                        "pasteType": "PASTE_NORMAL"
+                    }
+                }
+            ]
+        }
+        self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheetId, body=body).execute()
 
     def __get_column(self, index: int):
         columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',

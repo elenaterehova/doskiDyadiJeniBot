@@ -33,15 +33,15 @@ def add_event_kb():
 
 def edit_events_kb():
     keyboard = [
-        [InlineKeyboardButton(text='Изменить мероприятия', callback_data='edit_list_events')],
-        [InlineKeyboardButton(text='Добавить мероприятие', callback_data='add_event')],
+        [InlineKeyboardButton(text='Изменить мероприятия', callback_data='edit_list_events'),
+         InlineKeyboardButton(text='Добавить мероприятие', callback_data='add_event')],
         [InlineKeyboardButton(text='Главная', callback_data='main_state')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
 
 def edit_or_delete_event_kb(id):
     keyboard = [
-        [InlineKeyboardButton(text='Удалить', callback_data=f"delete_event:{id}")],
-        [InlineKeyboardButton(text='Изменить', callback_data=f"edit_event:{id}")]
+        [InlineKeyboardButton(text='Удалить', callback_data=f"delete_event:{id}"),
+         InlineKeyboardButton(text='Изменить', callback_data=f"edit_event:{id}")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
