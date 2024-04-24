@@ -10,7 +10,7 @@ from bot.keyboards.user.user_keyboard import *
 user_router = Router()
 
 
-@user_router.callback_query(F.data.contains('subscribe_for_the_event'))
+@user_router.callback_query(F.data.contains('user_subscribe_for_the_event'))
 async def subscribe_for_the_event(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     try:
         event_list = repo.get_events()
@@ -35,7 +35,7 @@ async def subscribe_for_the_event(callback_query: types.CallbackQuery, bot: Bot,
 async def event_chosen(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     event_id = callback_query.data
     await state.set_data({'event_id': event_id, 'user_name': ''})
-    await bot.send_message(chat_id=callback_query.from_user.id, text="Введите ваше имя:")
+    await bot.send_message(chat_id=callback_query.from_user.id, text="Введите ваше ФИО:")
     await state.set_state(states.set_user_name)
 
 

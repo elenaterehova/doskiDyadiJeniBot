@@ -11,7 +11,7 @@ admins_router = Router()
 
 
 # Кнопка 'Записаться на мероприятие'
-@admins_router.callback_query(F.data.contains('subscribe_for_the_event'))
+@admins_router.callback_query(F.data.contains('admin_subscribe_for_the_event'))
 async def subscribe_for_the_event(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     try:
         event_list = repo.get_events()
