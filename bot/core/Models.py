@@ -22,6 +22,9 @@ class UserModel:
         self.telegram_link = telegram_link
 
     @classmethod
+    def parse(cls, object: list):
+        return UserModel(user_id=object[0], name=object[1], phone_number=object[2], telegram_link=object[3])
+    @classmethod
     def mock(cls):
         return [UserModel(123, 'Терентьев Михал Палыч', '88005553535', 'NightBurgerus') for _ in range(0, 10)]
 

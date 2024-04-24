@@ -68,7 +68,7 @@ class GoogleSheetsAPI:
         s_row = start_row
         e_column = self.__get_column(max(start_column, 1) + columns)
         e_row = start_row + max(rows, 0)
-        sheet_name = f"{sheetName}{'!' if len(sheetName) > 0 else ''}"
+        sheet_name = f"'{sheetName}'{'!' if len(sheetName) > 0 else ''}"
         range = f"{sheet_name}{s_column}{s_row}:{e_column}{e_row if rows != -1 else ''}"
 
         res = self.service.spreadsheets().values().get(

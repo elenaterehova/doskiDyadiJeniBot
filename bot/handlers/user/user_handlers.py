@@ -22,9 +22,10 @@ async def subscribe_for_the_event(callback_query: types.CallbackQuery, bot: Bot,
                                         f"{event.date}",
                                    reply_markup=InlineKeyboardMarkup(
                                        inline_keyboard=[[InlineKeyboardButton(text='Записаться сюда',
-                                                                              callback_data=f"event_id: {event.id}")]],
+                                                                              callback_data=f"event_id:{event.id}")]],
                                        resize_keyboard=True,
                                        one_time_keyboard=True))
+
     except Exception as e:
         await bot.send_message(chat_id=callback_query.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
         print(str(e))
@@ -33,7 +34,8 @@ async def subscribe_for_the_event(callback_query: types.CallbackQuery, bot: Bot,
 # Мероприятие выбрано, пользователь вводит свое имя
 @user_router.callback_query(F.data.contains("event_id"))
 async def event_chosen(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
-    event_id = callback_query.data
+    event_id = callback_query.data.split(':')[1]
+    print(event_id)
     await state.set_data({'event_id': event_id, 'user_name': ''})
     await bot.send_message(chat_id=callback_query.from_user.id, text="Введите ваше ФИО:")
     await state.set_state(states.set_user_name)
@@ -68,12 +70,18 @@ async def user_phone_number_set(message: Message, bot: Bot, state: FSMContext):
     else:
         await message.answer(text=f"Ошибка записи на мероприятие: {response['message']}", reply_markup=user_start_keyboard())
 
-    shit = repo.get_subscribed_users(event_id=event)
-    for i in shit:
-        print(i.name)
     await state.clear()
 
 
-# @user_router.callback_query(F.data.contains('my_events'))
-# def my_events_list(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
-#     user_events = repo.get_subscribed_users(event_id=)
+@user_router.callback_query(F.data.contains('user_my_events'))
+async def my_events_list(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
+    user = str(callback_query.from_user.id)
+    events = repo.get_subscribed_events(user)
+
+    for e in events:
+        await bot.send_message(chat_id=callback_query.from_user.id, text=e)
+
+
+
+
+

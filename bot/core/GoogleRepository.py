@@ -306,3 +306,20 @@ class GoogleRepository:
         #   "message": "<Сообщение ошибки>"
         # }
         return {"unsubscribed": True}
+
+    def get_subscribed_events(self, user_id):
+        objects = self.apiWorker.get(sheetName=self.events_sheet_name, rows=-1, columns=4, start_row=2, start_column=1)
+        res = []
+        events = []
+        for i in range(0, len(objects)):
+            if len(objects[i]) < 2:
+                continue
+            res.append(EventModel.parse(object=objects[i]))
+        for x in res:
+            all_sheets = self.apiWorker.get(sheetName=f"{x.title} {x.date}", rows=-1, columns=4, start_row=2, start_column=1)
+            for y in range(0, len(all_sheets)):
+                if len(all_sheets[y]) < 2:
+                    continue
+                if user_id == all_sheets[y][0]:
+                    events.append(x.title)
+        return events
