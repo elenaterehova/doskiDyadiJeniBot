@@ -62,13 +62,14 @@ async def user_phone_number_set(message: Message, bot: Bot, state: FSMContext):
     event = data['event_id']
 
     response = repo.subscribe_to_the_event(event_id=event, user=UserModel(user_id=id,
-                                                               name=name,
-                                                               phone_number=user_phone_number,
-                                                               telegram_link=telegram_link))
+                                                                          name=name,
+                                                                          phone_number=user_phone_number,
+                                                                          telegram_link=telegram_link))
     if response['subscribed']:
         await message.answer(text=f'Вы успешно записаны на мероприятие.', reply_markup=user_start_keyboard())
     else:
-        await message.answer(text=f"Ошибка записи на мероприятие: {response['message']}", reply_markup=user_start_keyboard())
+        await message.answer(text=f"Ошибка записи на мероприятие: {response['message']}",
+                             reply_markup=user_start_keyboard())
 
     await state.clear()
 
@@ -77,11 +78,58 @@ async def user_phone_number_set(message: Message, bot: Bot, state: FSMContext):
 async def my_events_list(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     user = str(callback_query.from_user.id)
     events = repo.get_subscribed_events(user)
+    message_id = callback_query.message.message_id
+    await bot.edit_message_text(text='Получение всех мероприятий, на которые вы записаны...',
+                                chat_id=callback_query.from_user.id,
+                                message_id=message_id)
+    if len(events) == 0:
+        message = "Вы не записаны ни на одно мероприятие."
+        await bot.edit_message_text(text=message, chat_id=callback_query.from_user.id, message_id=message_id,
+                                    reply_markup=user_start_keyboard())
+    else:
+        message = "Список мероприятий, на которые вы записаны: \n\n"
+        for e in events:
+            message += f"Название: {e.title}\nОписание: {e.description}\nДата: {e.date}\n\n"
+        await bot.edit_message_text(text=message, chat_id=callback_query.from_user.id, message_id=message_id,
+                                    reply_markup=user_unsub_or_home_button())
 
+
+@user_router.callback_query(F.data.contains('unsub_from_event'))
+async def unsub_from_event(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
+    await callback_query.message.edit_text(text="Выберите мероприятие, от которого хотите отписаться")
+    user = str(callback_query.from_user.id)
+    events = repo.get_subscribed_events(user)
+    messages_id_list = []
     for e in events:
-        await bot.send_message(chat_id=callback_query.from_user.id, text=e)
+        message = await bot.send_message(chat_id=callback_query.from_user.id,
+                                         text=f"Название: {e.title}\nОписание: {e.description}\nДата: {e.date}\n\n",
+                                         reply_markup=InlineKeyboardMarkup(
+                                             inline_keyboard=[[InlineKeyboardButton(text='Отписаться',
+                                                                                    callback_data=f"user_unsub_event:{e.id}")]],
+                                             resize_keyboard=True,
+                                             one_time_keyboard=True))
+        messages_id_list.append(message.message_id)
+    await state.set_data({'messages_id_list': messages_id_list})
 
 
+@user_router.callback_query(F.data.contains('user_unsub_event'))
+async def user_unsubscribe(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
+    event_id = callback_query.data.split(':')[1]
+    response = repo.unsubscribe_from_event(event_id=event_id, user=callback_query.from_user.id)
+    data = await state.get_data()
+    messages_id = data['messages_id_list']
+    if response['unsubscribed']:
+        for message in messages_id:
+            await bot.delete_message(chat_id=callback_query.from_user.id, message_id=message - 1)
+        await bot.delete_messages(chat_id=callback_query.from_user.id, message_ids=messages_id)
+        await bot.send_message(chat_id=callback_query.from_user.id, text=f'Вы отписались от мероприятия.',
+                               reply_markup=user_start_keyboard())
+    else:
+        await bot.send_message(chat_id=callback_query.from_user.id, text=f"Что-то пошло не так: {response['message']}",
+                               reply_markup=user_start_keyboard())
 
-
-
+@user_router.callback_query(F.data.contains('user_main_state'))
+async def user_main_state(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
+    await callback_query.message.edit_text(text='Это бот для канала Доски дяди Жени. '
+                                  'Здесь вы можете записаться на мероприятие.',
+                             reply_markup=user_start_keyboard())

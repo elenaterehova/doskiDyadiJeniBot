@@ -321,5 +321,5 @@ class GoogleRepository:
                 if len(all_sheets[y]) < 2:
                     continue
                 if user_id == all_sheets[y][0]:
-                    events.append(x.title)
+                    events.append(x)
         return events
