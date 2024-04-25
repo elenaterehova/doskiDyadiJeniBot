@@ -115,7 +115,7 @@ async def unsub_from_event(callback_query: types.CallbackQuery, bot: Bot, state:
 @user_router.callback_query(F.data.contains('user_unsub_event'))
 async def user_unsubscribe(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     event_id = callback_query.data.split(':')[1]
-    response = repo.unsubscribe_from_event(event_id=event_id, user=callback_query.from_user.id)
+    response = repo.unsubscribe_from_event(event_id=event_id, user_id=callback_query.from_user.id)
     data = await state.get_data()
     messages_id = data['messages_id_list']
     if response['unsubscribed']:

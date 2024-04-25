@@ -293,7 +293,7 @@ class GoogleRepository:
         res = self.apiWorker.post(sheetName=sheet_name, data=data)
         return {"subscribed": True}
 
-    def unsubscribe_from_event(self, event_id: Union[int, str], user: UserModel) -> dict:
+    def unsubscribe_from_event(self, event_id: Union[int, str], user_id: int) -> dict:
         # Удаляет пользователя из списка записанных на мероприятие
         # При успешном удалении возвращает объект:
         # {
@@ -305,7 +305,27 @@ class GoogleRepository:
         #   "unsubscribed": False,
         #   "message": "<Сообщение ошибки>"
         # }
-        return {"unsubscribed": True}
+        events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=3)
+        sheet_name = -1
+        for e in events:
+            if str(e[0]) == str(event_id):
+                sheet_name = f"{e[1]} {e[3]}"
+                print(sheet_name)
+        results = self.apiWorker.get(sheetName=sheet_name, columns=4, start_column=1,start_row=2)
+        users = []
+        for result in results:
+            user_data = UserModel.parse(object=result).user_id
+            users.append(user_data)
+        for i in range(0, len(users)):
+            if user_id == int(users[i]):
+                resp = self.apiWorker.clear_cells(sheetName=sheet_name, rows= i + 1, columns=4, start_column=1,
+                                                   start_row=i + 2)
+                response = {"unsubscribed": resp}
+                if not resp:
+                    response["message"] = "Не удалось отписаться от мероприятия."
+                return response
+
+        # return {"unsubscribed": True}
 
     def get_subscribed_events(self, user_id):
         objects = self.apiWorker.get(sheetName=self.events_sheet_name, rows=-1, columns=4, start_row=2, start_column=1)
