@@ -68,7 +68,7 @@ class GoogleSheetsAPI:
         s_row = start_row
         e_column = self.__get_column(max(start_column, 1) + columns)
         e_row = start_row + max(rows, 0)
-        sheet_name = f"{sheetName}{'!' if len(sheetName) > 0 else ''}"
+        sheet_name = f"'{sheetName}'{'!' if len(sheetName) > 0 else ''}"
         range = f"{sheet_name}{s_column}{s_row}:{e_column}{e_row if rows != -1 else ''}"
 
         res = self.service.spreadsheets().values().get(
@@ -156,8 +156,8 @@ class GoogleSheetsAPI:
                 rows.append({"values": col})
 
             # Добавить хедер в лист
-            update_cells_dict: dict[str, dict[str, dict[str, int | Any] | list[
-                dict[str, list[dict[str, dict[str, Any] | dict[str, Any]]]]] | str]] = {
+            update_cells_dict: dict[str, dict[str, Union[dict[str, Union[int, Any]], list[
+                dict[str, list[dict[str, dict[str, Any] | dict[str, Any]]]]], str]]] = {
                 "updateCells": {
                     "start": {
                         "sheetId": sheet_id,
@@ -171,7 +171,8 @@ class GoogleSheetsAPI:
             body["requests"].append(update_cells_dict)
 
             # Сделать ячейки жирными
-            bold_cells_dict: dict[str, dict[str, dict[str, dict[str, dict[str, bool]]] | str | dict[str, int | Any]]] = {
+            bold_cells_dict: dict[str, dict[str, Union[
+                dict[str, dict[str, dict[str, bool]]], str, dict[str, Union[int, Any]]]]] = {
                 "repeatCell": {
                     "range": {
                         "sheetId": sheet_id,
@@ -194,7 +195,7 @@ class GoogleSheetsAPI:
 
     def delete_sheet(self, sheet: Union[int, str]):
         self.needs_update_sheets = True
-        if type(sheet) is not int:
+        if not str(sheet).isdigit():
             self.getSheets()
             id = 0
             for s in self.sheets:
@@ -213,6 +214,26 @@ class GoogleSheetsAPI:
             ]
         }
         self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheetId, body=body).execute()
+
+    def rename_sheet(self, sheet_id, new_title):
+        body = {
+            "requests": [
+                {
+                    "updateSheetProperties": {
+                        "properties": {
+                            "sheetId": sheet_id,
+                            "title": new_title,
+                        },
+                        "fields": "title",
+                    }
+                }
+            ]
+        }
+        try:
+            self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheetId, body=body).execute()
+            return True
+        except:
+            return False
 
     def cutPasteRow(self, sheet_id: int, source_row_index: int, destination_row_index: int):
         self.needs_update_sheets = True

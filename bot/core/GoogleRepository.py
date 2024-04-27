@@ -1,6 +1,7 @@
 from bot.core.GoogleApi import GoogleSheetsAPI
 from bot.core.Models import *
 from typing import Final, Union
+from bot.core.Constants import deeplink
 
 class GoogleRepository:
     def __init__(self, apiWorker: GoogleSheetsAPI):
@@ -121,17 +122,48 @@ class GoogleRepository:
         # Возвращает список всех мероприятий
         # return EventModel.mock()
 
-        events = self.apiWorker.get(sheetName=self.events_sheet_name, rows=-1, columns=4, start_row=2, start_column=1)
+        events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=4, start_row=2)
         res = []
         for i in range(0, len(events)):
             if len(events[i]) < 2:
                 continue
             res.append(EventModel.parse(object=events[i]))
+        print(list(map(lambda e: e.id, res)))
         return res
 
     def get_subscribed_users(self, event_id: Union[int, str]) -> [UserModel]:
         # Возвращает список пользователей, записавшихся на определённое мероприятие
         return UserModel.mock()
+
+    def get_event_info(self, event_id: Union[int, str]) -> Union[EventModel, None]:
+        events = self.get_events()
+        if len(events) == 0:
+            return None
+
+        events = list(filter(lambda e: e.id == event_id, events))
+        if len(events) == 0:
+            return None
+
+        try:
+            response = self.apiWorker.get(sheetName=f'{events[0].title} {events[0].date}', columns=4, start_row=2)
+            users = []
+            for item in response:
+                users.append(UserModel.parse(object=item))
+            events[0].users = users
+            return events[0]
+        except:
+            self.apiWorker.getSheets()
+            for sheet in self.apiWorker.sheets:
+                if str(sheet['properties']['sheetId']) == str(event_id):
+                    response = self.apiWorker.get(sheetName=f"{sheet['properties']['title']}", columns=4,
+                                                  start_row=2)
+                    users = []
+                    for item in response:
+                        users.append(UserModel.parse(object=item))
+                    events[0].users = users
+                    return events[0]
+            return None
+
 
     def add_event(self, info: EventModel) -> dict:
         # Добавляет мероприятие
@@ -185,7 +217,7 @@ class GoogleRepository:
         if len(events) > 0:
             return {
                 "added": True,
-                "link": f"t.me/https://t.me/dyadyaJenaTest_bot?register=id_{new_event_id}"
+                "link": f"{deeplink}{new_event_id}"
             }
 
         return {
@@ -206,10 +238,11 @@ class GoogleRepository:
         #   "message": "<Сообщение ошибки>"
         # }
         # TODO: не забыть удалить таблицу при удалении
+        print('remove_event: ', id)
         self.apiWorker.delete_sheet(sheet=id)
         events = self.apiWorker.get(sheetName=self.events_sheet_name)
         clear_index = -1
-        print(events)
+
         for i in range(0, len(events)):
             if len(events[i]) > 1 and str(events[i][0]) == str(id):
                 clear_index = i
@@ -232,7 +265,11 @@ class GoogleRepository:
                 sheet_id = int(s['properties']['sheetId'])
                 break
         self.apiWorker.cutPasteRow(sheet_id=sheet_id, source_row_index=clear_index + 1, destination_row_index=clear_index)
-        return {"removed": True}
+        res = self.apiWorker.get(sheetName=self.events_sheet_name, start_row=2)
+        return {
+            "removed": True,
+            "events": events
+        }
 
     def edit_event(self, id: Union[int, str], info: dict) -> dict:
         # Изменяет данные мероприятия
@@ -265,8 +302,97 @@ class GoogleRepository:
         #     "added": False,
         #     "message": "Ошибка добавления администратора"
         # }
-        #
-        return {"changed": True}
+
+        def rename_sheet_by_id(sheet_id, new_title):
+            return self.apiWorker.rename_sheet(sheet_id=sheet_id, new_title=new_title)
+
+        def rename_sheet_by_name(sheet_name, old_title, new_title, old_date):
+            self.apiWorker.getSheets()
+            sheets = self.apiWorker.sheets
+            sheet_id = -1
+            for sheet in sheets:
+                title = sheet['properties']['title']
+                check_title = old_title in str(title).lower() and str(old_date).lower() in str(title).lower()
+
+                if check_title:
+                    sheet_id = sheet['properties']['sheetId']
+                    break
+
+            if sheet_id == -1:
+                return False
+
+            new_title = f'{new_title} {old_date}'
+            return self.apiWorker.rename_sheet(sheet_id=sheet_id, new_title=new_title)
+
+        def rename_sheet():
+            old_title = info['old_title']
+            old_date = info['old_date']
+            new_title = info['new_title']
+
+            if rename_sheet_by_id(sheet_id=id, new_title=f'{new_title} {old_date}'):
+                return update_data_in_main_sheet(2, data=new_title)
+
+            if rename_sheet_by_name(sheet_name=old_title, old_title=old_title, new_title=new_title, old_date=old_date):
+                return update_data_in_main_sheet(2, data=new_title)
+            return False
+
+        def change_description():
+            new_description = info['description']
+            return update_data_in_main_sheet(3, new_description)
+
+        def change_date():
+            new_date = info['date']
+            return update_data_in_main_sheet(4, new_date)
+
+        def update_data_in_main_sheet(column: int, data: str):
+            sheet = self.apiWorker.get(sheetName=self.events_sheet_name, columns=10, start_row=2)
+            row_index = -1
+            for i in range(0, len(sheet)):
+                row = sheet[i]
+                if str(row[0]) == str(id):
+                    row_index = i
+                    break
+            if row_index == -1:
+                return False
+
+            row = sheet[row_index]
+            row[column - 1] = data
+            return self.apiWorker.post(sheetName=self.events_sheet_name, data=[row], start_row=row_index + 2, start_column=1)
+
+
+        changing_parameter = info['changing']
+        print(changing_parameter)
+        if changing_parameter.lower() == 'title':
+            res = rename_sheet()
+            if res:
+                return { 'changed': True }
+            return {
+                'changed': False,
+                'message': 'не удалось обновить лист'
+            }
+
+        if changing_parameter.lower() == 'description':
+            res = change_description()
+            if res:
+                return { 'changed': True }
+            return {
+                'changed': False,
+                'message': 'не удалось обновить лист'
+            }
+
+        if changing_parameter.lower() == 'date':
+            res = change_date()
+            if res:
+                return { 'changed': True }
+            return {
+                'changed': False,
+                'message': 'не удалось обновить лист'
+            }
+
+        return {
+            "changed": False,
+            "message": "таблица не найдена"
+        }
 
     # ------ USER INTERACTIVE ------
     def subscribe_to_the_event(self, event_id: Union[int, str], user: UserModel) -> dict:
@@ -306,3 +432,20 @@ class GoogleRepository:
         #   "message": "<Сообщение ошибки>"
         # }
         return {"unsubscribed": True}
+
+    def get_subscribed_events(self, user_id):
+        objects = self.apiWorker.get(sheetName=self.events_sheet_name, rows=-1, columns=4, start_row=2, start_column=1)
+        res = []
+        events = []
+        for i in range(0, len(objects)):
+            if len(objects[i]) < 2:
+                continue
+            res.append(EventModel.parse(object=objects[i]))
+        for x in res:
+            all_sheets = self.apiWorker.get(sheetName=f"{x.title} {x.date}", rows=-1, columns=4, start_row=2, start_column=1)
+            for y in range(0, len(all_sheets)):
+                if len(all_sheets[y]) < 2:
+                    continue
+                if user_id == all_sheets[y][0]:
+                    events.append(x.title)
+        return events

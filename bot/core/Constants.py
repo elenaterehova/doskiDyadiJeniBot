@@ -1,0 +1,1 @@
+deeplink = "https://t.me/dyadyaJenaTest_bot?register=id:"
