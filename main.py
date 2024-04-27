@@ -14,8 +14,8 @@ from bot.handlers.admin.admin_event_handlers import *
 
 load_dotenv()
 
-bot = Bot(os.getenv('BOT_TOKEN'))
-dp = Dispatcher()
+# bot = Bot(os.getenv('BOT_TOKEN'))
+# dp = Dispatcher()
 
 
 async def main():

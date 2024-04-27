@@ -1,4 +1,5 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
+from bot.core.Constants import spreadsheet
 
 
 def admins_start_keyboard() -> InlineKeyboardMarkup:
@@ -7,6 +8,7 @@ def admins_start_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text='Мои мероприятия', callback_data='my_events'),
          InlineKeyboardButton(text='Все мероприятия', callback_data='all_events')],
         [InlineKeyboardButton(text='Показать администраторов', callback_data='show_admins')],
+        [InlineKeyboardButton(text='Ссылка на гугл таблицу', url=f'https://docs.google.com/spreadsheets/d/{spreadsheet}')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
 

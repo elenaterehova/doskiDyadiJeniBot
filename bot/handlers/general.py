@@ -1,6 +1,6 @@
 from bot.core.GoogleRepository import *
-
-repo = GoogleRepository(apiWorker=GoogleSheetsAPI('1-NnH2xy84i9SgrZZbsZTjdPDfq4kRywBo047o9yHigM'))
+from bot.core.Constants import spreadsheet
+repo = GoogleRepository(apiWorker=GoogleSheetsAPI(spreadsheet))
 
 import asyncio
 import logging
@@ -31,6 +31,11 @@ class EventRegistration(StatesGroup):
     set_new_event_title = State()
     set_event_description = State()
     set_event_date = State()
+
+    # edit event
+    edit_event_title = State()
+    edit_event_description = State()
+    edit_event_date = State()
 
 
 states = EventRegistration()

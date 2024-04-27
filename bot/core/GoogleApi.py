@@ -16,6 +16,7 @@ class GoogleSheetsAPI:
         self.sheets = None
         self.__configure()
         self.needs_update_sheets = True
+        self.spreadsheet_link = ''
 
     def __configure(self):
         credentials = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE,
@@ -28,19 +29,9 @@ class GoogleSheetsAPI:
         items = results.get('files', [])
 
         if not items:
-            self.spreadsheet = self.service.spreadsheets().create(body={
-                'properties': {'title': 'Первый тестовый документ', 'locale': 'ru_RU'},
-                'sheets': [{'properties': {'sheetType': 'GRID',
-                                           'sheetId': 0,
-                                           'title': 'Лист номер один',
-                                           'gridProperties': {'rowCount': 100, 'columnCount': 15}}}]
-            }).execute()
+            self.configure_if_no_spreadsheet(driveService)
         else:
-            items_copy = list(filter(lambda x: x['id'] == self.spreadsheetId, items))
-            if len(items_copy) == 0:
-                self.spreadsheet = items[-1]
-            else:
-                self.spreadsheet = items_copy[0]
+            self.configure_if_exist_spreadsheet(driveService, items)
         self.spreadsheetId = self.spreadsheet['id']
 
         access = driveService.permissions().create(
@@ -50,7 +41,35 @@ class GoogleSheetsAPI:
             fields='id',
             sendNotificationEmail=False
         ).execute()
-        print('https://docs.google.com/spreadsheets/d/' + self.spreadsheetId)
+        self.spreadsheet_link = 'https://docs.google.com/spreadsheets/d/' + self.spreadsheetId
+        print(self.spreadsheet_link)
+
+    def configure_if_exist_spreadsheet(self, driveService, items):
+        items_copy = list(filter(lambda x: x['id'] == self.spreadsheetId, items))
+        if len(items_copy) == 0:
+            self.spreadsheet = items[-1]
+        else:
+            self.spreadsheet = items_copy[0]
+
+    def configure_if_no_spreadsheet(self, driveService):
+        self.spreadsheet = self.service.spreadsheets().create(body={
+            'properties': {'title': 'Доски дяди Жени', 'locale': 'ru_RU'},
+            'sheets': [{'properties': {'sheetType': 'GRID',
+                                       'sheetId': 0,
+                                       'title': 'Лист номер один',
+                                       'gridProperties': {'rowCount': 100, 'columnCount': 15}}}]
+        }).execute()
+        self.spreadsheetId = self.spreadsheet['id']
+        access = driveService.permissions().create(
+            fileId=self.spreadsheetId,
+            body={'type': 'user', 'role': 'writer',
+                  'emailAddress': 'nightburgerus@gmail.com'},
+            fields='id',
+            sendNotificationEmail=False
+        ).execute()
+
+        self.add_sheet(sheet_id=0, sheet_name='Мероприятия', header=['ID', 'Название', 'Описание', 'Дата'])
+        self.add_sheet(sheet_id=1, sheet_name='Администраторы', header=['ID', 'Никнейм'])
 
     def getSheets(self):
         spreadsheet = self.service.spreadsheets().get(spreadsheetId=self.spreadsheetId).execute()
@@ -84,47 +103,54 @@ class GoogleSheetsAPI:
     def post(self, sheetName, data, start_column=-1, start_row=-1):
         self.needs_update_sheets = True
         if start_row == -1 and start_column == -1:
-            res = self.service.spreadsheets().values().append(
-                spreadsheetId=self.spreadsheetId,
-                range=f"{sheetName}!A1:{self.__get_column(len(data[0]))}1",
-                valueInputOption="USER_ENTERED",
-                body={
-                    "values": data
-                }
-            ).execute()
-            updates = res['updates']['updatedCells']
-            summ = 0
-            for row in data:
-                summ += len(row)
-            return summ == updates
+            try:
+                res = self.service.spreadsheets().values().append(
+                    spreadsheetId=self.spreadsheetId,
+                    range=f"{sheetName}!A1:{self.__get_column(len(data[0]))}1",
+                    valueInputOption="USER_ENTERED",
+                    body={
+                        "values": data
+                    }
+                ).execute()
+                updates = res['updates']['updatedCells']
+                summ = 0
+                for row in data:
+                    summ += len(row)
+                return summ == updates
+            except:
+                return False
 
         s_column = self.__get_column(start_column)
         s_row = start_row
         e_column = self.__get_column(start_column + len(data[0]))
         e_row = len(data) + start_row
 
-        res = self.service.spreadsheets().values().batchUpdate(
-            spreadsheetId=self.spreadsheetId,
-            body={
-                "valueInputOption": "USER_ENTERED",
-                "data": {
-                    "range": f"{sheetName}!{s_column}{s_row}:{e_column}{e_row}",
-                    "majorDimension": "ROWS",
-                    "values": data
+        try:
+            res = self.service.spreadsheets().values().batchUpdate(
+                spreadsheetId=self.spreadsheetId,
+                body={
+                    "valueInputOption": "USER_ENTERED",
+                    "data": {
+                        "range": f"{sheetName}!{s_column}{s_row}:{e_column}{e_row}",
+                        "majorDimension": "ROWS",
+                        "values": data
+                    }
                 }
-            }
-        ).execute()
-        updates = res['totalUpdatedCells']
-        summ = 0
-        for row in data:
-            summ += len(row)
-        return summ == updates
+            ).execute()
+            updates = res['totalUpdatedCells']
+            summ = 0
+            for row in data:
+                summ += len(row)
+            return summ == updates
+        except:
+            return False
 
     def clear_cells(self, sheetName, rows: int, columns: int, start_row: int, start_column):
         self.needs_update_sheets = True
         data = []
         for i in range(0, rows):
             data.append(['' for _ in range(0, columns)])
+
         return self.post(sheetName=sheetName, data=data, start_column=start_column, start_row=start_row)
 
     def add_sheet(self, sheet_id, sheet_name: str, header: list = []):
@@ -191,7 +217,12 @@ class GoogleSheetsAPI:
             }
 
             body["requests"].append(bold_cells_dict)
-        self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheetId, body=body).execute()
+        try:
+            self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheetId, body=body).execute()
+            return True
+        except:
+            return False
+
 
     def delete_sheet(self, sheet: Union[int, str]):
         self.needs_update_sheets = True
@@ -213,7 +244,11 @@ class GoogleSheetsAPI:
                 }
             ]
         }
-        self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheetId, body=body).execute()
+        try:
+            self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheetId, body=body).execute()
+            return True
+        except:
+            return False
 
     def rename_sheet(self, sheet_id, new_title):
         body = {
@@ -255,7 +290,11 @@ class GoogleSheetsAPI:
                 }
             ]
         }
-        self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheetId, body=body).execute()
+        try:
+            self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheetId, body=body).execute()
+            return True
+        except:
+            return False
 
     def __get_column(self, index: int):
         columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
