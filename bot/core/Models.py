@@ -34,6 +34,7 @@ class EventModel:
         self.title = title
         self.description = description
         self.date = date
+        self.users = []
 
     @classmethod
     def parse(cls, object: list):

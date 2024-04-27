@@ -4,8 +4,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardBu
 def admins_start_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
         [InlineKeyboardButton(text='Записаться на мероприятие', callback_data='admin_subscribe_for_the_event')],
-        [InlineKeyboardButton(text='Мои мероприятия', callback_data='my_events')],
-        [InlineKeyboardButton(text='Все мероприятия', callback_data='all_events')],
+        [InlineKeyboardButton(text='Мои мероприятия', callback_data='my_events'),
+         InlineKeyboardButton(text='Все мероприятия', callback_data='all_events')],
         [InlineKeyboardButton(text='Показать администраторов', callback_data='show_admins')],
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
@@ -39,9 +39,46 @@ def edit_events_kb():
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
 
-def edit_or_delete_event_kb(id):
+def info_or_delete_event_kb(id):
     keyboard = [
         [InlineKeyboardButton(text='Удалить', callback_data=f"delete_event:{id}"),
-         InlineKeyboardButton(text='Изменить', callback_data=f"edit_event:{id}")]
+         # InlineKeyboardButton(text='Изменить', callback_data=f"edit_event:{id}")]
+         InlineKeyboardButton(text='Инфо', callback_data=f'event_info:{id}')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
+
+
+def info_or_delete_event_with_main_kb(id):
+    keyboard = [
+        [InlineKeyboardButton(text='Удалить', callback_data=f"delete_event:{id}"),
+         InlineKeyboardButton(text='Инфо', callback_data=f"event_info:{id}")],
+        [InlineKeyboardButton(text='Главная', callback_data='main_state')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
+
+
+def only_main_kb():
+    keyboard = [
+        [InlineKeyboardButton(text='Главная', callback_data=f"main_state")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
+
+def event_info_kb(id):
+    keyboard = [
+        [InlineKeyboardButton(text='Удалить', callback_data=f'delete_event:{id}'),
+         InlineKeyboardButton(text='Редактировать', callback_data=f'edit_event:{id}')],
+        [InlineKeyboardButton(text='Главная', callback_data=f"main_state")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
+
+def edit_event_kb(id, title, date):
+    keyboard = [
+        [InlineKeyboardButton(text='Заголовок',
+                              callback_data=f"edit_title: {id}:{title}:{date}"),
+         InlineKeyboardButton(text='Описание',
+                              callback_data=f"edit_description: {id}:{title}:{date}")],
+        [InlineKeyboardButton(text='Дата',
+                              callback_data=f"edit_date: {id}:{title}:{date}")],
+        [InlineKeyboardButton(text='Главная', callback_data='main_state')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
