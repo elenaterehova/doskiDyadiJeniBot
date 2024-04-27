@@ -1,3 +1,5 @@
+import re
+
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from bot.handlers.general import states
@@ -44,11 +46,15 @@ async def event_chosen(callback_query: types.CallbackQuery, bot: Bot, state: FSM
 # Имя введено, пользователь вводит номер телефона
 @user_router.message(states.set_user_name)
 async def user_name_set(message: Message, bot: Bot, state: FSMContext):
+    fio_pattern = re.compile(r'^(([А-Яа-яЁё]+)\\-?([А-Яа-яЁё]+))\\ (([А-Яа-яЁё]+)\\-?([А-Яа-яЁё]+))(\\ (([А-Яа-яЁё]+)\\-?([А-Яа-яЁё]+)))?$')
     user_name = message.text
-    await state.update_data({'user_name': user_name})
-    await bot.send_message(chat_id=message.from_user.id, text="Введите свой номер телефона:")
-    await state.set_state(states.set_user_phone_number)
-
+    if fio_pattern.match(str(user_name)):
+        await state.update_data({'user_name': user_name})
+        await bot.send_message(chat_id=message.from_user.id, text="Введите свой номер телефона:")
+        await state.set_state(states.set_user_phone_number)
+    else:
+        await bot.send_message(chat_id=message.from_user.id, text="ФИО введено некорректно. Попробуйте снова.")
+        await state.set_state(states.set_user_name)
 
 # Номер телефона введен, данные сохраняются в таблицу
 @user_router.message(states.set_user_phone_number)
