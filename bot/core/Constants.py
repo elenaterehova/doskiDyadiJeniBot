@@ -1,1 +1,1 @@
-deeplink = "https://t.me/dyadyaJenaTest_bot?register=id:"
+deeplink = "https://t.me/dyadyaJenaTest_bot?start=register_event_"

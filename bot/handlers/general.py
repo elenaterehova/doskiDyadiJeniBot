@@ -1,3 +1,5 @@
+import re
+
 from bot.core.GoogleRepository import *
 
 repo = GoogleRepository(apiWorker=GoogleSheetsAPI('1-NnH2xy84i9SgrZZbsZTjdPDfq4kRywBo047o9yHigM'))
@@ -6,8 +8,8 @@ import asyncio
 import logging
 
 from aiogram import F, Bot, Router, types
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, Message
-from aiogram.filters import Command, StateFilter
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.filters import Command, StateFilter, CommandObject, CommandStart
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from bot.keyboards.admin import admin_keyboard
@@ -34,6 +36,24 @@ class EventRegistration(StatesGroup):
 
 
 states = EventRegistration()
+
+
+@router.message(CommandStart(deep_link=deeplink, magic=F.args.regexp(re.compile(r'register_event_(\d+)'))))
+async def register_handler(message: Message, state: FSMContext, command: CommandObject):
+    args = command.args
+    event_id = command.args.split("_")[2]
+    event_list = repo.get_events()
+    for e in event_list:
+        if event_id == e.id:
+            event_title = e.title
+    await message.answer(text='Здравствуйте, это бот для канала Доски дяди Жени. \n'
+                              f'Чтобы зарегистрироваться на мероприятие "{event_title}", нажмите на кнопку ниже.',
+                         reply_markup=InlineKeyboardMarkup(
+                             inline_keyboard=[[InlineKeyboardButton(text='Записаться на мероприятие',
+                                                                    callback_data=f"event_id:{event_id}")]],
+                             resize_keyboard=True,
+                             one_time_keyboard=True))
+
 
 
 @router.message(Command("start"))
