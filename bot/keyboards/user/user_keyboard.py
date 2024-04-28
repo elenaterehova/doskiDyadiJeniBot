@@ -3,8 +3,9 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardBu
 
 def user_start_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
-        [InlineKeyboardButton(text='Записаться на мероприятие', callback_data='user_subscribe_for_the_event')],
         [InlineKeyboardButton(text='Мои мероприятия', callback_data='user_my_events')],
+        [InlineKeyboardButton(text='Записаться на мероприятие', callback_data='user_subscribe_for_the_event'),
+         InlineKeyboardButton(text='Главная', callback_data='user_main_state')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
 

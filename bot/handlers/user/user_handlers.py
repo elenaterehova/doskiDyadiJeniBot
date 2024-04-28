@@ -60,6 +60,13 @@ async def user_name_set(message: Message, bot: Bot, state: FSMContext):
 @user_router.message(states.set_user_phone_number)
 async def user_phone_number_set(message: Message, bot: Bot, state: FSMContext):
     data = await state.get_data()
+    phone_pattern = re.compile(
+        r'^((\+7|7|8)+(\ )?)?(\(?[0-9]{3}\)?)(\ |-)?[0-9]{3}(\ |-)?[0-9]{2}(\ |-)?[0-9]{2}$')
+
+    if phone_pattern.match(message.text) is None:
+        await bot.send_message(chat_id=message.from_user.id, text="Некорректный номер телефона. Попробуйте снова.")
+        await state.set_state(states.set_user_phone_number)
+        return
 
     id = message.from_user.id
     name = data['user_name']
