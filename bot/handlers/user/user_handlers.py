@@ -46,7 +46,7 @@ async def event_chosen(callback_query: types.CallbackQuery, bot: Bot, state: FSM
 # Имя введено, пользователь вводит номер телефона
 @user_router.message(states.set_user_name)
 async def user_name_set(message: Message, bot: Bot, state: FSMContext):
-    fio_pattern = re.compile(r'^(([А-Яа-яЁё]+)\\-?([А-Яа-яЁё]+))\\ (([А-Яа-яЁё]+)\\-?([А-Яа-яЁё]+))(\\ (([А-Яа-яЁё]+)\\-?([А-Яа-яЁё]+)))?$')
+    fio_pattern = re.compile(r'^(([А-Яа-яЁё]+)\-?([А-Яа-яЁё]+))\ (([А-Яа-яЁё]+)\-?([А-Яа-яЁё]+))(\ (([А-Яа-яЁё]+)\-?([А-Яа-яЁё]+)))?$')
     user_name = message.text
     if fio_pattern.match(str(user_name)):
         await state.update_data({'user_name': user_name})
