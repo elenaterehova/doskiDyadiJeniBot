@@ -218,7 +218,7 @@ async def event_description_added(message: Message, bot: Bot, state: FSMContext)
     event_description = message.text
     await state.set_state(states.set_event_date)
     await state.update_data({'description': event_description})
-    await bot.send_message(chat_id=message.from_user.id, text='Введите дату мероприятия в формате: 28/10/2024T10:00')
+    await bot.send_message(chat_id=message.from_user.id, text='Введите дату мероприятия в формате: 28.10.2024 10.00')
 
 
 @admin_events_router.message(states.set_event_date)
