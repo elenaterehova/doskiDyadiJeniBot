@@ -86,6 +86,9 @@ async def user_phone_number_set(message: Message, bot: Bot, state: FSMContext):
 
     await state.clear()
 
+@user_router.callback_query(F.data.contains('my_events'))
+async def my_events_list_admin(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
+    await my_events_list(callback_query, bot, state)
 
 @user_router.callback_query(F.data.contains('user_my_events'))
 async def my_events_list(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
