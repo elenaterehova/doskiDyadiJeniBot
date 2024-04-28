@@ -73,14 +73,15 @@ def event_info_kb(id):
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
 
-def edit_event_kb(id, title, date):
+def edit_event_kb(id):
+    data = f"{id}"
     keyboard = [
         [InlineKeyboardButton(text='Заголовок',
-                              callback_data=f"edit_title: {id}:{title}:{date}"),
+                              callback_data=f"edit_title: {data}"),
          InlineKeyboardButton(text='Описание',
-                              callback_data=f"edit_description: {id}:{title}:{date}")],
+                              callback_data=f"edit_description: {data}")],
         [InlineKeyboardButton(text='Дата',
-                              callback_data=f"edit_date: {id}:{title}:{date}")],
+                              callback_data=f"edit_date: {data}")],
         [InlineKeyboardButton(text='Главная', callback_data='main_state')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)

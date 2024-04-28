@@ -38,6 +38,7 @@ async def remove_editing_mode_key(callback_query: types.CallbackQuery, state: FS
 @admin_events_router.callback_query(F.data.contains("edit_event"))
 async def edit_event(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     await remove_editing_message(callback_query, state)
+    print(callback_query.data)
     event_id_from_callback = int(callback_query.data.split(":")[1])
 
     event_list = repo.get_events()
@@ -48,7 +49,7 @@ async def edit_event(callback_query: types.CallbackQuery, bot: Bot, state: FSMCo
                                    text=f"Название: {event.title}\n\n"
                                         f"Описание:{event.description}\n\n"
                                         f"Дата: {event.date}",
-                                   reply_markup=edit_event_kb(event.id, event.title, event.date))
+                                   reply_markup=edit_event_kb(f'{event.id}'))
             state_data = await state.get_data()
             key = f'edit_message_id_{callback_query.from_user.id}'
             state_data[key] = msg.message_id
@@ -115,12 +116,8 @@ async def new_event_title_set(message: Message,  bot: Bot, state: FSMContext):
             'date': new_title
         }
     else:
-        old_title = event_id['callback_query'].data.split(":")[2]
-        old_date = event_id['callback_query'].data.split(":")[3]
         info = {
             'changing': 'title',
-            'old_title': old_title,
-            'old_date': old_date,
             'new_title': new_title
         }
 

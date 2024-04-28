@@ -304,7 +304,12 @@ class GoogleRepository:
         # }
 
         def rename_sheet_by_id(sheet_id, new_title):
-            return self.apiWorker.rename_sheet(sheet_id=sheet_id, new_title=new_title)
+            events = self.apiWorker.get(sheetName=self.events_sheet_name)
+            for e in events:
+                if str(e.id) == str(sheet_id):
+                    return self.apiWorker.rename_sheet(sheet_id=sheet_id, new_title=new_title)
+
+            return False
 
         def rename_sheet_by_name(sheet_name, old_title, new_title, old_date):
             self.apiWorker.getSheets()
@@ -325,14 +330,9 @@ class GoogleRepository:
             return self.apiWorker.rename_sheet(sheet_id=sheet_id, new_title=new_title)
 
         def rename_sheet():
-            old_title = info['old_title']
-            old_date = info['old_date']
             new_title = info['new_title']
 
-            if rename_sheet_by_id(sheet_id=id, new_title=f'{new_title} {old_date}'):
-                return update_data_in_main_sheet(2, data=new_title)
-
-            if rename_sheet_by_name(sheet_name=old_title, old_title=old_title, new_title=new_title, old_date=old_date):
+            if rename_sheet_by_id(sheet_id=id, new_title=f'{new_title}'):
                 return update_data_in_main_sheet(2, data=new_title)
             return False
 
@@ -415,9 +415,15 @@ class GoogleRepository:
             if str(e[0]) == str(event_id):
                 sheet_name = f"'{e[1]} {e[3]}'"
 
+
         data = [[user.user_id, user.name, user.phone_number, user.telegram_link]]
         res = self.apiWorker.post(sheetName=sheet_name, data=data)
-        return {"subscribed": True}
+        if res:
+            return {"subscribed": True}
+        return {
+            'subscribed': False,
+            'message': 'внутренняя ошибка сервера'
+        }
 
     def unsubscribe_from_event(self, event_id: Union[int, str], user_id: int) -> dict:
         # Удаляет пользователя из списка записанных на мероприятие
