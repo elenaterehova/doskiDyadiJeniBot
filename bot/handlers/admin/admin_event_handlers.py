@@ -69,7 +69,7 @@ async def edit_title(callback_query: types.CallbackQuery, bot: Bot, state: FSMCo
 @admin_events_router.callback_query(F.data.contains("edit_description"))
 async def edit_description(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     event_id_from_callback = int(callback_query.data.split(":")[1])
-    await state.set_state(states.set_event_description)
+    await state.set_state(states.edit_event_description)
     await state.set_data({'event_id': event_id_from_callback, 'callback_query': callback_query})
     await bot.send_message(callback_query.from_user.id, text='Введите новое описание мероприятия')
 
@@ -77,18 +77,18 @@ async def edit_description(callback_query: types.CallbackQuery, bot: Bot, state:
 @admin_events_router.callback_query(F.data.contains("edit_date"))
 async def edit_date(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     event_id_from_callback = int(callback_query.data.split(":")[1])
-    await state.set_state(states.set_event_date)
+    await state.set_state(states.edit_event_date)
     await state.set_data({'event_id': event_id_from_callback, 'callback_query': callback_query})
     await bot.send_message(callback_query.from_user.id, text='Введите новую дату мероприятия')
 
-@admin_events_router.message(states.set_event_description)
+@admin_events_router.message(states.edit_event_description)
 async def new_event_desctiption_set(message: Message,  bot: Bot, state: FSMContext):
     data = await state.get_data()
     data['is_description'] = True
     await state.set_data(data=data)
     await new_event_title_set(message, bot, state)
 
-@admin_events_router.message(states.set_event_date)
+@admin_events_router.message(states.edit_event_date)
 async def new_event_date_set(message: Message,  bot: Bot, state: FSMContext):
     data = await state.get_data()
     data['is_date'] = True
@@ -101,6 +101,7 @@ async def new_event_title_set(message: Message,  bot: Bot, state: FSMContext):
     new_title = message.text
     event_id = await state.get_data()
 
+    print(event_id)
     _id = event_id['event_id']
     info = {}
     if 'is_description' in event_id:

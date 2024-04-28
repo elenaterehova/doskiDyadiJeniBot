@@ -192,7 +192,7 @@ class GoogleRepository:
 
         old_events_count = len(events)
 
-        new_event_id = 1
+        new_event_id = 100
         if len(events) > 0 and len(events[-1]) > 0 and len(str(events[-1][0])) > 0:
             new_event_id = int(events[-1][0]) + 1
 
