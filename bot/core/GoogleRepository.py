@@ -438,24 +438,35 @@ class GoogleRepository:
         #   "message": "<Сообщение ошибки>"
         # }
         events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=3)
-        sheet_name = -1
+        clear_index = -1
         for e in events:
             if str(e[0]) == str(event_id):
                 sheet_name = f"{e[1]} {e[3]}"
                 print(sheet_name)
         results = self.apiWorker.get(sheetName=sheet_name, columns=4, start_column=1,start_row=2)
+
         users = []
         for result in results:
             user_data = UserModel.parse(object=result).user_id
             users.append(user_data)
-        for i in range(0, len(users)):
+
+        for i in range(len(users)):
             if user_id == int(users[i]):
-                resp = self.apiWorker.clear_cells(sheetName=sheet_name, rows= i + 1, columns=4, start_column=1,
-                                                   start_row=i + 2)
-                response = {"unsubscribed": resp}
-                if not resp:
-                    response["message"] = "Не удалось отписаться от мероприятия."
-                return response
+                clear_index = i + 2
+                break
+        if clear_index == -1:
+            return {
+                'unsubscribed': False,
+                'message': 'Пользователь не найден.'
+            }
+        self.apiWorker.clear_cells(sheetName=sheet_name, rows=1, columns=4, start_column=1, start_row=clear_index)
+
+        for s in self.apiWorker.sheets:
+            if str(s['properties']['title']).lower() == sheet_name.lower():
+                sheet_id = int(s['properties']['sheetId'])
+        self.apiWorker.cutPasteRow(sheet_id=sheet_id, source_row_index= clear_index, destination_row_index=clear_index - 1)
+        return {"unsubscribed": True}
+
 
         # return {"unsubscribed": True}
 
