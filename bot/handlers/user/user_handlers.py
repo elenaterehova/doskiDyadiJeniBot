@@ -1,5 +1,6 @@
 import re
 
+from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from bot.handlers.general import states
@@ -22,9 +23,10 @@ async def subscribe_for_the_event(callback_query: types.CallbackQuery, bot: Bot,
             # проверка на is_subscribed. Если возвращает True, месседж будет другой
             if repo.is_subscribed(event.id, user_id):
                 await bot.send_message(chat_id=callback_query.from_user.id,
-                                       text=f"{event.title}\n\n"
+                                       text=f"<u><b>{event.title}</b></u>\n\n"
                                             f"{event.description}\n\n"
                                             f"{event.date}",
+                                       parse_mode=ParseMode.HTML,
                                        reply_markup=InlineKeyboardMarkup(
                                            inline_keyboard=[[InlineKeyboardButton(text='Вы уже записаны.',
                                                                                   callback_data=f"already_subscribed")]],
@@ -32,7 +34,7 @@ async def subscribe_for_the_event(callback_query: types.CallbackQuery, bot: Bot,
                                            one_time_keyboard=True))
             else:
                 await bot.send_message(chat_id=callback_query.from_user.id,
-                                       text=f"{event.title}\n\n"
+                                       text=f"<u><b>{event.title}</b></u>\n\n"
                                             f"{event.description}\n\n"
                                             f"{event.date}",
                                        reply_markup=InlineKeyboardMarkup(
@@ -127,8 +129,8 @@ async def my_events_list(callback_query: types.CallbackQuery, bot: Bot, state: F
     else:
         message = "Список мероприятий, на которые вы записаны: \n\n"
         for e in events:
-            message += f"Название: {e.title}\nОписание: {e.description}\nДата: {e.date}\n\n"
-        await bot.edit_message_text(text=message, chat_id=callback_query.from_user.id, message_id=message_id,
+            message += f"Название: <u><b>{e.title}</b></u>\nОписание: {e.description}\nДата: {e.date}\n\n"
+        await bot.edit_message_text(text=message, parse_mode=ParseMode.HTML, chat_id=callback_query.from_user.id, message_id=message_id,
                                     reply_markup=user_unsub_or_home_button())
 
 
@@ -140,7 +142,8 @@ async def unsub_from_event(callback_query: types.CallbackQuery, bot: Bot, state:
     messages_id_list = []
     for e in events:
         message = await bot.send_message(chat_id=callback_query.from_user.id,
-                                         text=f"Название: {e.title}\nОписание: {e.description}\nДата: {e.date}\n\n",
+                                         text=f"Название: <u><b>{e.title}</b></u>\nОписание: {e.description}\nДата: {e.date}\n\n",
+                                         parse_mode=ParseMode.HTML,
                                          reply_markup=InlineKeyboardMarkup(
                                              inline_keyboard=[[InlineKeyboardButton(text='Отписаться',
                                                                                     callback_data=f"user_unsub_event:{e.id}")]],
