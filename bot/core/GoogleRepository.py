@@ -395,6 +395,23 @@ class GoogleRepository:
         }
 
     # ------ USER INTERACTIVE ------
+
+    def is_subscribed(self, event_id: Union[int, str], user_id: Union[int, str]):
+        events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=3)
+        for e in events:
+            if str(e[0]) == str(event_id):
+                sheet_name = f"{e[1]} {e[3]}"
+        # Проверка на наличие юзера в списке записанных на мероприятие
+        results = self.apiWorker.get(sheetName=sheet_name, columns=4, start_column=1, start_row=2)
+        users = []
+        for result in results:
+            user_data = UserModel.parse(object=result).user_id
+            users.append(user_data)
+        if len(users) > 0:
+            for x in users:
+                if len(x) > 0 and x == str(user_id):
+                    return True
+        return False
     def subscribe_to_the_event(self, event_id: Union[int, str], user: UserModel) -> dict:
         # Записывает пользователя на мероприятие
         # При успешной записи возвращает объект:
@@ -409,20 +426,33 @@ class GoogleRepository:
         # }
 
         events = self.apiWorker.get(sheetName=self.events_sheet_name, columns=3)
-        sheet_name = -1
         for e in events:
             print(e)
             if str(e[0]) == str(event_id):
-                sheet_name = f"'{e[1]} {e[3]}'"
+                sheet_name = f"{e[1]} {e[3]}"
 
+        # Проверка на наличие юзера в списке записанных на мероприятие
+        results = self.apiWorker.get(sheetName=sheet_name, columns=4, start_column=1, start_row=2)
+        users = []
+        for result in results:
+            user_data = UserModel.parse(object=result).user_id
+            users.append(user_data)
+        if len(users) > 0:
+            for x in users:
+                if len(x) > 0 and x[0] == int(user.user_id):
+                    return {
+                        "subscribed": False,
+                        "message": "Пользователь с таким id уже записан на это мероприятие."
+                    }
 
+        # Добавление юзера
         data = [[user.user_id, user.name, user.phone_number, user.telegram_link]]
         res = self.apiWorker.post(sheetName=sheet_name, data=data)
         if res:
             return {"subscribed": True}
         return {
             'subscribed': False,
-            'message': 'внутренняя ошибка сервера'
+            'message': 'Внутренняя ошибка сервера.'
         }
 
     def unsubscribe_from_event(self, event_id: Union[int, str], user_id: int) -> dict:
