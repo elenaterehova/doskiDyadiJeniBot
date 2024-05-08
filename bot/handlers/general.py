@@ -2,6 +2,7 @@ import re
 
 from bot.core.GoogleRepository import *
 from bot.core.Constants import spreadsheet
+
 repo = GoogleRepository(apiWorker=GoogleSheetsAPI(spreadsheet))
 
 import asyncio
@@ -28,7 +29,7 @@ class EventRegistration(StatesGroup):
     set_user_name = State()
     set_user_phone_number = State()
 
-#     add event
+    #     add event
     set_event_title = State()
     set_new_event_title = State()
     set_event_description = State()
@@ -48,17 +49,26 @@ async def register_handler(message: Message, state: FSMContext, command: Command
     args = command.args
     event_id = command.args.split("_")[2]
     event_list = repo.get_events()
+    user_id = str(message.from_user.id)
     for e in event_list:
         if event_id == e.id:
             event_title = e.title
-    await message.answer(text='Здравствуйте, это бот для канала Доски дяди Жени. \n'
-                              f'Чтобы зарегистрироваться на мероприятие "{event_title}", нажмите на кнопку ниже.',
-                         reply_markup=InlineKeyboardMarkup(
-                             inline_keyboard=[[InlineKeyboardButton(text='Записаться на мероприятие',
-                                                                    callback_data=f"event_id:{event_id}")]],
-                             resize_keyboard=True,
-                             one_time_keyboard=True))
-
+    if repo.is_subscribed(event_id, user_id):
+        await message.answer(text='Здравствуйте, это бот для канала Доски дяди Жени. \n'
+                                  f'Чтобы зарегистрироваться на мероприятие "{event_title}", нажмите на кнопку ниже.',
+                             reply_markup=InlineKeyboardMarkup(
+                                 inline_keyboard=[[InlineKeyboardButton(text='Вы уже записаны на это мероприятие.',
+                                                                        callback_data=f"already_subscribed")]],
+                                 resize_keyboard=True,
+                                 one_time_keyboard=True))
+    else:
+        await message.answer(text='Здравствуйте, это бот для канала Доски дяди Жени. \n'
+                                  f'Чтобы зарегистрироваться на мероприятие "{event_title}", нажмите на кнопку ниже.',
+                             reply_markup=InlineKeyboardMarkup(
+                                 inline_keyboard=[[InlineKeyboardButton(text='Записаться на мероприятие',
+                                                                        callback_data=f"event_id:{event_id}")]],
+                                 resize_keyboard=True,
+                                 one_time_keyboard=True))
 
 
 @router.message(Command("start"))
@@ -73,6 +83,7 @@ async def start_handler(message: Message, state: FSMContext):
         await message.answer(text='Здравствуйте, это бот для канала Доски дяди Жени. '
                                   'Здесь вы можете записаться на мероприятие.',
                              reply_markup=user_keyboard.user_start_keyboard())
+
 
 @router.callback_query(F.data.contains('main_state'))
 async def main_state(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
