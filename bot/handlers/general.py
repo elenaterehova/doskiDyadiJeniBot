@@ -2,6 +2,7 @@ import re
 
 from bot.core.GoogleRepository import *
 from bot.core.Constants import spreadsheet
+from bot.keyboards.user.user_keyboard import user_start_keyboard
 
 repo = GoogleRepository(apiWorker=GoogleSheetsAPI(spreadsheet))
 
@@ -17,7 +18,6 @@ from bot.keyboards.admin import admin_keyboard
 from bot.keyboards.user import user_keyboard
 
 router = Router()
-main_admin_id = 1302324252
 
 
 class EventRegistration(StatesGroup):
@@ -136,3 +136,19 @@ async def main_state(callback_query: types.CallbackQuery, bot: Bot, state: FSMCo
             await bot.send_message(chat_id=callback_query.from_user.id,
                                    text=user_text,
                                    reply_markup=user_keyboard.user_start_keyboard())
+
+@router.message(F.text)
+async def text_message_handler(message: Message, bot: Bot, state: FSMContext):
+    try:
+        user = message.from_user.id
+        if repo.is_admin(user):
+            await bot.send_message(chat_id=message.from_user.id, text='Это бот для канала Доски дяди Жени. '
+                                                                      'Здесь вы можете записаться на мероприятие.',
+                                   reply_markup=admin_keyboard.admins_start_keyboard())
+        else:
+            await bot.send_message(chat_id=message.from_user.id, text='Это бот для канала Доски дяди Жени. '
+                                                                      'Здесь вы можете записаться на мероприятие.',
+                                   reply_markup=user_start_keyboard())
+    except Exception as e:
+        await bot.send_message(chat_id=message.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
+        print(str(e))
