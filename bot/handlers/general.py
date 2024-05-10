@@ -120,9 +120,8 @@ async def main_state(callback_query: types.CallbackQuery, bot: Bot, state: FSMCo
     if repo.is_admin(user):
         if edit_messages_id is not None:
             print(edit_messages_id)
-            await bot.edit_message_text(text=admin_text,
+            await bot.send_message(text=admin_text,
                                         chat_id=callback_query.from_user.id,
-                                        message_id=edit_messages_id,
                                         reply_markup=admin_keyboard.admins_start_keyboard())
         else:
             await bot.send_message(chat_id=callback_query.from_user.id,
@@ -130,9 +129,8 @@ async def main_state(callback_query: types.CallbackQuery, bot: Bot, state: FSMCo
                                    reply_markup=admin_keyboard.admins_start_keyboard())
     else:
         if edit_messages_id is not None:
-            await bot.edit_message_text(text=admin_text,
+            await bot.send_message(text=admin_text,
                                         chat_id=callback_query.from_user.id,
-                                        message_id=edit_messages_id,
                                         reply_markup=user_keyboard.user_start_keyboard())
         else:
             await bot.send_message(chat_id=callback_query.from_user.id,

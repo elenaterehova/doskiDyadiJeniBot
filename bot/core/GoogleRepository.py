@@ -96,6 +96,11 @@ class GoogleRepository:
         #   "message": "<Сообщение ошибки>"
         # }
         admins = self.apiWorker.get(sheetName=self.admins_sheet_name, columns=1, start_row=2, start_column=1)
+
+        for s in self.apiWorker.sheets:
+            if str(s['properties']['title']).lower() == self.admins_sheet_name.lower():
+                sheet_id = int(s['properties']['sheetId'])
+
         if len(admins) == 0:
             return { "removed": False, "message": "Администратор не найден" }
 
@@ -103,7 +108,10 @@ class GoogleRepository:
             if len(admins[i - 1]) == 0:
                 continue
             if str(admins[i - 1][0]) == str(id):
+
                 res = self.apiWorker.clear_cells(sheetName=self.admins_sheet_name, rows=1, columns=2, start_column=1, start_row=i + 1)
+                self.apiWorker.cutPasteRow(sheet_id=sheet_id, source_row_index=i + 1,
+                                           destination_row_index=i)
                 response = { "removed": res }
                 if not res:
                     response["message"] = "Не удалось удалить администратора"
