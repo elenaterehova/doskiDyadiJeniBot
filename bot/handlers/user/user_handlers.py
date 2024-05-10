@@ -141,13 +141,3 @@ async def user_main_state(callback_query: types.CallbackQuery, bot: Bot, state: 
         print(str(e))
 
 
-@user_router.message(F.text, StateFilter(None))
-async def text_message_handler(message: Message, bot: Bot, state: FSMContext):
-    try:
-        user = message.from_user.id
-        await bot.send_message(chat_id=message.from_user.id, text='Это бот для канала Доски дяди Жени. '
-                                                                  'Здесь вы можете записаться на мероприятие.',
-                               reply_markup=user_start_keyboard())
-    except Exception as e:
-        await bot.send_message(chat_id=message.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
-        print(str(e))

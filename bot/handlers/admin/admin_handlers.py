@@ -262,14 +262,3 @@ async def add_admin_name(message: Message, bot: Bot, state: FSMContext):
 #     else:
 #         await bot.edit_message_text(text=f"Ошибка добавления мероприятия: {response['message']}", chat_id=message.from_user.id,
 #                                     message_id=message.message_id + 1, reply_markup=admins_start_keyboard())
-
-@admins_router.message(F.text, StateFilter(None))
-async def text_message_handler(message: Message, bot: Bot, state: FSMContext):
-    try:
-        user = message.from_user.id
-        await bot.send_message(chat_id=message.from_user.id, text='Это бот для канала Доски дяди Жени. '
-                                                                  'Здесь вы можете записаться на мероприятие.',
-                               reply_markup=admins_start_keyboard())
-    except Exception as e:
-        await bot.send_message(chat_id=message.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
-        print(str(e))

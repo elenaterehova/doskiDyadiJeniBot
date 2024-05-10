@@ -207,3 +207,19 @@ async def user_phone_number_set(message: Message, bot: Bot, state: FSMContext):
     except Exception as e:
         await bot.send_message(chat_id=message.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
         print(str(e))
+
+@router.message(F.text, StateFilter(None))
+async def text_message_handler(message: Message, bot: Bot, state: FSMContext):
+    try:
+        user = message.from_user.id
+        if repo.is_admin(user):
+            await bot.send_message(chat_id=message.from_user.id, text='Это бот для канала Доски дяди Жени. '
+                                                                      'Здесь вы можете записаться на мероприятие.',
+                                   reply_markup=admin_keyboard.admins_start_keyboard())
+        else:
+            await bot.send_message(chat_id=message.from_user.id, text='Это бот для канала Доски дяди Жени. '
+                                                                      'Здесь вы можете записаться на мероприятие.',
+                                   reply_markup=user_start_keyboard())
+    except Exception as e:
+        await bot.send_message(chat_id=message.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
+        print(str(e))
