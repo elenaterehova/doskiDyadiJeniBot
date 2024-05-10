@@ -145,8 +145,8 @@ async def remove_admin(callback_query: types.CallbackQuery, bot: Bot, state: FSM
 
 @admins_router.callback_query(F.data.contains('add_admin'))
 async def add_admin_id(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
-    await state.set_state(states.set_id)
     await bot.send_message(callback_query.from_user.id, text='Введите id пользователя')
+    await state.set_state(states.set_id)
 
 
 @admins_router.message(states.set_id)
@@ -271,3 +271,13 @@ async def add_admin(message: Message, bot: Bot, state: FSMContext):
 #     else:
 #         await bot.edit_message_text(text=f"Ошибка добавления мероприятия: {response['message']}", chat_id=message.from_user.id,
 #                                     message_id=message.message_id + 1, reply_markup=admins_start_keyboard())
+@admins_router.message(F.text)
+async def text_message_handler(message: Message, bot: Bot, state: FSMContext):
+    try:
+        user = message.from_user.id
+        await bot.send_message(chat_id=message.from_user.id, text='Это бот для канала Доски дяди Жени. '
+                                                                  'Здесь вы можете записаться на мероприятие.',
+                               reply_markup=admins_start_keyboard())
+    except Exception as e:
+        await bot.send_message(chat_id=message.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
+        print(str(e))
