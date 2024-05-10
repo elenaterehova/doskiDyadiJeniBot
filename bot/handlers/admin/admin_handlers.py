@@ -1,3 +1,4 @@
+from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from bot.handlers.general import states
@@ -15,20 +16,36 @@ admins_router = Router()
 async def subscribe_for_the_event(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     try:
         event_list = repo.get_events()
+        admin_id = str(callback_query.from_user.id)
         await bot.send_message(chat_id=callback_query.from_user.id, text='Список мероприятий: ')
         for event in event_list:
-            await bot.send_message(chat_id=callback_query.from_user.id,
-                                   text=f"{event.title}\n\n"
-                                        f"{event.description}\n\n"
-                                        f"{event.date}",
-                                   reply_markup=InlineKeyboardMarkup(
-                                       inline_keyboard=[[InlineKeyboardButton(text='Записаться сюда',
-                                                                              callback_data=f"event_id:{event.id}")],
-                                                        [InlineKeyboardButton(text='Редактировать мероприятие',
-                                                                              callback_data=f"edit_event:{event.id}")]
-                                                        ],
-                                       resize_keyboard=True,
-                                       one_time_keyboard=True))
+            if repo.is_subscribed(event.id, admin_id):
+                await bot.send_message(chat_id=callback_query.from_user.id,
+                                       text=f"<u><b>{event.title}</b></u>\n\n"
+                                            f"{event.description}\n\n"
+                                            f"{event.date}",
+                                       parse_mode=ParseMode.HTML,
+                                       reply_markup=InlineKeyboardMarkup(
+                                           inline_keyboard=[[InlineKeyboardButton(text='Вы уже записаны',
+                                                                                  callback_data=f"already_subscribed")],
+                                                            [InlineKeyboardButton(text='Редактировать мероприятие',
+                                                                                  callback_data=f"edit_event:{event.id}")]
+                                                            ],
+                                           resize_keyboard=True,
+                                           one_time_keyboard=True))
+            else:
+                await bot.send_message(chat_id=callback_query.from_user.id,
+                                       text=f"{event.title}\n\n"
+                                            f"{event.description}\n\n"
+                                            f"{event.date}",
+                                       reply_markup=InlineKeyboardMarkup(
+                                           inline_keyboard=[[InlineKeyboardButton(text='Записаться сюда',
+                                                                                  callback_data=f"event_id:{event.id}")],
+                                                            [InlineKeyboardButton(text='Редактировать мероприятие',
+                                                                                  callback_data=f"edit_event:{event.id}")]
+                                                            ],
+                                           resize_keyboard=True,
+                                           one_time_keyboard=True))
     except Exception as e:
         await bot.send_message(chat_id=callback_query.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
         print(str(e))
