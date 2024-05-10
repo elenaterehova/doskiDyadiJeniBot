@@ -1,6 +1,7 @@
 import re
 
 from aiogram.enums import ParseMode
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from bot.handlers.general import states
@@ -140,7 +141,7 @@ async def user_main_state(callback_query: types.CallbackQuery, bot: Bot, state: 
         print(str(e))
 
 
-@user_router.message(F.text)
+@user_router.message(F.text, StateFilter(None))
 async def text_message_handler(message: Message, bot: Bot, state: FSMContext):
     try:
         user = message.from_user.id
