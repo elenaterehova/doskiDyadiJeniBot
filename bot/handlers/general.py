@@ -121,8 +121,8 @@ async def main_state(callback_query: types.CallbackQuery, bot: Bot, state: FSMCo
         if edit_messages_id is not None:
             print(edit_messages_id)
             await bot.send_message(text=admin_text,
-                                        chat_id=callback_query.from_user.id,
-                                        reply_markup=admin_keyboard.admins_start_keyboard())
+                                   chat_id=callback_query.from_user.id,
+                                   reply_markup=admin_keyboard.admins_start_keyboard())
         else:
             await bot.send_message(chat_id=callback_query.from_user.id,
                                    text=admin_text,
@@ -130,12 +130,84 @@ async def main_state(callback_query: types.CallbackQuery, bot: Bot, state: FSMCo
     else:
         if edit_messages_id is not None:
             await bot.send_message(text=admin_text,
-                                        chat_id=callback_query.from_user.id,
-                                        reply_markup=user_keyboard.user_start_keyboard())
+                                   chat_id=callback_query.from_user.id,
+                                   reply_markup=user_keyboard.user_start_keyboard())
         else:
             await bot.send_message(chat_id=callback_query.from_user.id,
                                    text=user_text,
                                    reply_markup=user_keyboard.user_start_keyboard())
+
+
+# Мероприятие выбрано, пользователь вводит свое имя
+@router.callback_query(F.data.contains("event_id"))
+async def event_chosen(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
+    try:
+        event_id = callback_query.data.split(':')[1]
+        print(event_id)
+        await state.set_data({'event_id': event_id, 'user_name': ''})
+        await bot.send_message(chat_id=callback_query.from_user.id, text="Введите ваше ФИО:")
+        await state.set_state(states.set_user_name)
+    except Exception as e:
+        await bot.send_message(chat_id=callback_query.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
+        print(str(e))
+
+
+# Имя введено, пользователь вводит номер телефона
+@router.message(states.set_user_name)
+async def user_name_set(message: Message, bot: Bot, state: FSMContext):
+    try:
+        fio_pattern = re.compile(
+            r'^(([А-Яа-яЁё]+)\-?([А-Яа-яЁё]+))\ (([А-Яа-яЁё]+)\-?([А-Яа-яЁё]+))(\ (([А-Яа-яЁё]+)\-?([А-Яа-яЁё]+)))?$')
+        user_name = message.text
+        if fio_pattern.match(str(user_name)):
+            await state.update_data({'user_name': user_name})
+            await bot.send_message(chat_id=message.from_user.id, text="Введите свой номер телефона:")
+            await state.set_state(states.set_user_phone_number)
+        else:
+            await bot.send_message(chat_id=message.from_user.id, text="ФИО введено некорректно. Попробуйте снова.")
+            await state.set_state(states.set_user_name)
+    except Exception as e:
+        await bot.send_message(chat_id=message.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
+        print(str(e))
+
+
+# Номер телефона введен, данные сохраняются в таблицу
+@router.message(states.set_user_phone_number)
+async def user_phone_number_set(message: Message, bot: Bot, state: FSMContext):
+    try:
+        data = await state.get_data()
+        phone_pattern = re.compile(
+            r'^((\+7|7|8)+(\ )?)?(\(?[0-9]{3}\)?)(\ |-)?[0-9]{3}(\ |-)?[0-9]{2}(\ |-)?[0-9]{2}$')
+        if phone_pattern.match(message.text) is None:
+            await bot.send_message(chat_id=message.from_user.id, text="Некорректный номер телефона. Попробуйте снова.")
+            await state.set_state(states.set_user_phone_number)
+            return
+
+        id = message.from_user.id
+        name = data['user_name']
+        user_phone_number = message.text
+        telegram_link = message.from_user.username
+        event = data['event_id']
+
+        response = repo.subscribe_to_the_event(event_id=event, user=UserModel(user_id=id,
+                                                                              name=name,
+                                                                              phone_number=user_phone_number,
+                                                                              telegram_link=telegram_link))
+        if response['subscribed']:
+            if repo.is_admin(id):
+                await message.answer(text=f'Вы успешно записаны на мероприятие.', reply_markup=admin_keyboard.admins_start_keyboard())
+            else:
+                await message.answer(text=f'Вы успешно записаны на мероприятие.',
+                                     reply_markup=user_start_keyboard())
+        else:
+            await message.answer(text=f"Ошибка записи на мероприятие: {response['message']}",
+                                 reply_markup=user_start_keyboard())
+
+        await state.clear()
+    except Exception as e:
+        await bot.send_message(chat_id=message.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
+        print(str(e))
+
 
 @router.message(F.text)
 async def text_message_handler(message: Message, bot: Bot, state: FSMContext):
