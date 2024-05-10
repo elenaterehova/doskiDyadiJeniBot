@@ -37,26 +37,28 @@ async def remove_editing_mode_key(callback_query: types.CallbackQuery, state: FS
 
 @admin_events_router.callback_query(F.data.contains("edit_event"))
 async def edit_event(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
-    await remove_editing_message(callback_query, state)
-    print(callback_query.data)
-    event_id_from_callback = int(callback_query.data.split(":")[1])
+    try:
+        await remove_editing_message(callback_query, state)
+        print(callback_query.data)
+        event_id_from_callback = int(callback_query.data.split(":")[1])
 
-    event_list = repo.get_events()
-    for event in event_list:
-        if str(event_id_from_callback) == str(event.id):
-            # await bot.send_message(chat_id=callback_query.from_user.id, text='Редактирование мероприятия:')
-            msg = await bot.send_message(chat_id=callback_query.from_user.id,
-                                   text=f"Название: {event.title}\n\n"
-                                        f"Описание:{event.description}\n\n"
-                                        f"Дата: {event.date}",
-                                   reply_markup=edit_event_kb(f'{event.id}'))
-            state_data = await state.get_data()
-            key = f'edit_message_id_{callback_query.from_user.id}'
-            state_data[key] = msg.message_id
-            await state.set_data(data=state_data)
-            return
-        else:
-            await bot.send_message(chat_id=callback_query.from_user.id, text='Мероприятие не найдено.')
+        event_list = repo.get_events()
+        for event in event_list:
+            if str(event_id_from_callback) == str(event.id):
+                # await bot.send_message(chat_id=callback_query.from_user.id, text='Редактирование мероприятия:')
+                msg = await bot.send_message(chat_id=callback_query.from_user.id,
+                                       text=f"Название: {event.title}\n\n"
+                                            f"Описание:{event.description}\n\n"
+                                            f"Дата: {event.date}",
+                                       reply_markup=edit_event_kb(f'{event.id}'))
+                state_data = await state.get_data()
+                key = f'edit_message_id_{callback_query.from_user.id}'
+                state_data[key] = msg.message_id
+                await state.set_data(data=state_data)
+                return
+    except Exception as e:
+        await bot.send_message(chat_id=callback_query.from_user.id, text='Что-то пошло не так. Попробуйте снова.')
+        print(str(e))
 
 
 @admin_events_router.callback_query(F.data.contains("edit_title"))
@@ -127,9 +129,11 @@ async def new_event_title_set(message: Message,  bot: Bot, state: FSMContext):
         await bot.send_message(chat_id=message.from_user.id, text='Данные мероприятия успешно изменены.')
         callback_query = event_id['callback_query']
         await edit_event(callback_query, bot, state)
+        await state.clear()
     else:
         await bot.send_message(chat_id=message.from_user.id,
                                text=f"Ошибка редактирования мероприятия: {response['message']}")
+        await state.clear()
 
 # ------------------------------------СПИСОК МЕРОПРИЯТИЙ-----------------------------------------------------
 

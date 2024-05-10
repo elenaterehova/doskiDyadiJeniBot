@@ -314,9 +314,8 @@ class GoogleRepository:
         def rename_sheet_by_id(sheet_id, new_title):
             events = self.apiWorker.get(sheetName=self.events_sheet_name)
             for e in events:
-                if str(e.id) == str(sheet_id):
+                if str(e[0]) == str(sheet_id):
                     return self.apiWorker.rename_sheet(sheet_id=sheet_id, new_title=new_title)
-
             return False
 
         def rename_sheet_by_name(sheet_name, old_title, new_title, old_date):
