@@ -240,9 +240,11 @@ async def event_date_added(message: Message, bot: Bot, state: FSMContext):
             _message += f"\nСсылка на регистрацию: {response['link']}"
         await bot.edit_message_text(text=_message, chat_id=message.from_user.id,
                                     message_id=message.message_id + 1, reply_markup=admins_start_keyboard())
+        await state.clear()
     else:
         await bot.edit_message_text(text=f"Ошибка добавления мероприятия: {response['message']}", chat_id=message.from_user.id,
                                     message_id=message.message_id + 1, reply_markup=admins_start_keyboard())
+        await state.clear()
 
 
 # ------------------------------------УДАЛИТЬ МЕРОПРИЯТИЕ-----------------------------------------------------
