@@ -168,9 +168,14 @@ async def add_admin(message: Message, bot: Bot, state: FSMContext):
     if response['added']:
         await bot.send_message(chat_id=message.from_user.id, text='Администратор успешно добавлен!',
                                reply_markup=admins_start_keyboard())
+        await state.clear()
     else:
         await bot.send_message(chat_id=message.from_user.id,
                                text=f"Ошибка добавления администратора: {response['message']}")
+        await state.clear()
+        await bot.send_message(chat_id=message.from_user.id,
+                               text='Чтобы добавить администратора, нажмите на кнопку ниже',
+                               reply_markup=add_admin_kb())
 
 
 @admins_router.message(states.set_id)
@@ -181,20 +186,6 @@ async def add_admin_name(message: Message, bot: Bot, state: FSMContext):
     await state.set_data({'id': id})
     await bot.send_message(chat_id=message.from_user.id, text='Введите имя пользователя')
 
-
-@admins_router.message(states.set_name)
-async def add_admin(message: Message, bot: Bot, state: FSMContext):
-    id = await state.get_data()
-    id = id['id']
-    name = message.text
-    response = repo.add_admin(AdminModel(id=id, nickname=name))
-
-    if response['added']:
-        await bot.send_message(chat_id=message.from_user.id, text='Администратор успешно добавлен!',
-                               reply_markup=admins_start_keyboard())
-    else:
-        await bot.send_message(chat_id=message.from_user.id,
-                               text=f"Ошибка добавления администратора: {response['message']}")
 
 
 # # ------------------------------------СПИСОК МЕРОПРИЯТИЙ-----------------------------------------------------
